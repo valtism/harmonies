@@ -1,5 +1,5 @@
 import { defineHex, Grid, Orientation, TupleCoordinates } from "honeycomb-grid";
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import BoardSideA from "./assets/boardSideA.webp";
 import clsx from "clsx";
 
@@ -49,11 +49,93 @@ interface Tile {
   cube: Cube | null;
 }
 
+const allTiles = [
+  ...Array.from({ length: 23 }).map(() => Token.Blue),
+  ...Array.from({ length: 23 }).map(() => Token.Gray),
+  ...Array.from({ length: 21 }).map(() => Token.Brown),
+  ...Array.from({ length: 19 }).map(() => Token.Green),
+  ...Array.from({ length: 19 }).map(() => Token.Yellow),
+  ...Array.from({ length: 15 }).map(() => Token.Red),
+];
+
+function shuffle<T>(array: T[]) {
+  return array
+    .map((value) => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
+}
+
 const defaultWidth = 726;
+
+type CentralBoard = {
+  0: Token[];
+  1: Token[];
+  2: Token[];
+  3: Token[];
+  4: Token[];
+};
+
+const initialState: {
+  players: string[];
+  currentPlayer: string | null;
+  board: "A" | "B";
+  bag: Token[];
+  centralBoard: CentralBoard;
+  playerBoards: [][];
+} = {
+  players: [],
+  currentPlayer: null,
+  board: "A",
+  bag: [],
+  centralBoard: {
+    0: [],
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+  },
+  playerBoards: [],
+};
+
+type ActionType =
+  | { type: "addPlayer"; payload: string }
+  | { type: "startGame"; payload: string };
 
 export default function App() {
   const [width, setWidth] = useState(defaultWidth);
-  const [token, setToken] = useState<Token | null>(null);
+
+  const [serverState, dispatch] = useReducer((state, action: ActionType) => {
+    switch (action.type) {
+      case "addPlayer":
+        const playerId = crypto.randomUUID();
+        return {
+          ...state,
+          players: [...state.players, playerId],
+        };
+      case "startGame":
+        if (state.players.length === 0) return state;
+
+        const bag = shuffle(allTiles);
+        const centralBoard: CentralBoard = {
+          0: bag.splice(0, 3),
+          1: bag.splice(0, 3),
+          2: bag.splice(0, 3),
+          3: bag.splice(0, 3),
+          4: bag.splice(0, 3),
+        };
+
+        return {
+          ...state,
+          bag: bag,
+          centralBoard: centralBoard,
+        };
+      default:
+        action satisfies never;
+        return state;
+    }
+  }, initialState);
+
+  console.log(serverState);
 
   const Hex = defineHex({
     dimensions: width / 14,
@@ -61,7 +143,13 @@ export default function App() {
     origin: "topLeft",
   });
 
+  // const coordinates: TupleCoordinates[] = jsonGrid.coordinates.map(
+  //   ({ q, r }) => [q, r]
+  // );
+
   const grid = new Grid(Hex, gridA);
+
+  const [token, setToken] = useState<Token | null>(null);
 
   const [myTiles, setMyTiles] = useState(() => {
     const tiles: Record<string, Tile> = {};
@@ -140,6 +228,13 @@ export default function App() {
         </button>
       </div>
       <div className="text-white">Current Token: {token}</div>
+      <button
+        onClick={() => dispatch({ type: "addPlayer", payload: "Player 1" })}
+        className="text-white"
+      >
+        Add Player
+      </button>
+      <div className="text-white">Players: {serverState.players}</div>
     </div>
   );
 }
