@@ -1,7 +1,8 @@
 import { defineHex, Grid, Orientation, TupleCoordinates } from "honeycomb-grid";
 import { useReducer, useState } from "react";
-import BoardSideA from "./assets/boardSideA.webp";
+import BoardSideA from "src/assets/boardSideA.webp";
 import clsx from "clsx";
+import usePartySocket from "partysocket/react";
 
 const gridA: TupleCoordinates[] = [
   [0, 0],
@@ -101,7 +102,7 @@ type ActionType =
   | { type: "addPlayer"; payload: string }
   | { type: "startGame"; payload: string };
 
-export default function App() {
+export function Game() {
   const [width, setWidth] = useState(defaultWidth);
 
   const [serverState, dispatch] = useReducer((state, action: ActionType) => {
@@ -135,8 +136,6 @@ export default function App() {
     }
   }, initialState);
 
-  console.log(serverState);
-
   const Hex = defineHex({
     dimensions: width / 14,
     orientation: Orientation.FLAT,
@@ -161,6 +160,18 @@ export default function App() {
       };
     });
     return tiles;
+  });
+
+  const socket = usePartySocket({
+    // host defaults to the current URL if not set
+    //host: process.env.PARTYKIT_HOST,
+    // we could use any room name here
+    host: "localhost:1999",
+    room: "hello",
+    onMessage(evt) {
+      console.log("onMessage");
+      console.log(evt);
+    },
   });
 
   return (
@@ -235,6 +246,16 @@ export default function App() {
         Add Player
       </button>
       <div className="text-white">Players: {serverState.players}</div>
+      <button
+        className="text-white"
+        onClick={() => {
+          console.log("hellos");
+
+          socket.send("hello");
+        }}
+      >
+        Party
+      </button>
     </div>
   );
 }
