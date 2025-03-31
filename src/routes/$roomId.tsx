@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Game } from "src/components/Game";
 import { GameSocket } from "src/components/GameSocket";
 import { NameSelect } from "src/components/NameSelect";
 import useLocalStorageState from "use-local-storage-state";

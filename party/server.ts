@@ -1,9 +1,14 @@
 import "@total-typescript/ts-reset";
-import { type } from "arktype";
-import { TupleCoordinates } from "honeycomb-grid";
 import type * as Party from "partykit/server";
+import {
+  GameState,
+  Token,
+  userSchema,
+  ActionType,
+  TupleCoordinates,
+} from "../src/shared";
 
-const gridA: TupleCoordinates[] = [
+const gridA: TupleCoordinates = [
   [0, 0],
   [0, 1],
   [0, 2],
@@ -29,26 +34,6 @@ const gridA: TupleCoordinates[] = [
   [4, 2],
 ];
 
-const Token = {
-  Blue: "blue",
-  Gray: "gray",
-  Brown: "brown",
-  Green: "green",
-  Yellow: "yellow",
-  Red: "red",
-} as const;
-type Token = (typeof Token)[keyof typeof Token];
-const Cubes = {
-  Animal: "animal",
-  Spirit: "spirit",
-} as const;
-type Cube = (typeof Cubes)[keyof typeof Cubes];
-
-interface Tile {
-  tokens: Token[];
-  cube: Cube | null;
-}
-
 const allTiles = [
   ...Array.from({ length: 23 }).map(() => Token.Blue),
   ...Array.from({ length: 23 }).map(() => Token.Gray),
@@ -63,31 +48,6 @@ function shuffle<T>(array: T[]) {
     .map((value) => ({ value, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
     .map(({ value }) => value);
-}
-
-type CentralBoard = {
-  0: Token[];
-  1: Token[];
-  2: Token[];
-  3: Token[];
-  4: Token[];
-};
-
-const userDef = type({
-  id: "string",
-  name: "string",
-});
-
-type User = typeof userDef.infer;
-
-interface GameState {
-  grid: TupleCoordinates[];
-  players: User[];
-  currentPlayerId: string | null;
-  board: "A" | "B";
-  bag: Token[];
-  centralBoard: CentralBoard;
-  playerBoards: Record<string, Record<string, Tile>>;
 }
 
 const initialState: GameState = {
@@ -105,10 +65,6 @@ const initialState: GameState = {
   },
   playerBoards: {},
 };
-
-type ActionType =
-  | { type: "addPlayer"; payload: string }
-  | { type: "startGame"; payload: string };
 
 export default class Server implements Party.Server {
   gameState: GameState;
@@ -131,17 +87,7 @@ export default class Server implements Party.Server {
     const userJson = JSON.parse(
       new URL(ctx.request.url).searchParams.get("user") || "",
     );
-    const user = userDef(userJson);
-
-    if (user instanceof type.errors) {
-      console.error(user.summary);
-      return;
-    }
-
-    if (!user) {
-      console.error("User not found");
-      return;
-    }
+    const user = userSchema.parse(userJson);
 
     const alreadyAdded = this.gameState.players.some(
       (player) => player.id === user.id,

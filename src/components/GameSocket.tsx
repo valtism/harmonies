@@ -1,41 +1,7 @@
 import usePartySocket from "partysocket/react";
-import { Game, User } from "./Game";
+import { Game } from "./Game";
 import { useState } from "react";
-
-const Token = {
-  Blue: "blue",
-  Gray: "gray",
-  Brown: "brown",
-  Green: "green",
-  Yellow: "yellow",
-  Red: "red",
-} as const;
-type Token = (typeof Token)[keyof typeof Token];
-const Cubes = {
-  Animal: "animal",
-  Spirit: "spirit",
-} as const;
-type Cube = (typeof Cubes)[keyof typeof Cubes];
-type CentralBoard = {
-  0: Token[];
-  1: Token[];
-  2: Token[];
-  3: Token[];
-  4: Token[];
-};
-interface Tile {
-  tokens: Token[];
-  cube: Cube | null;
-}
-
-export interface GameState {
-  players: User[];
-  currentPlayer: string | null;
-  board: "A" | "B";
-  bag: Token[];
-  centralBoard: CentralBoard;
-  playerBoards: Record<string, Record<string, Tile>>;
-}
+import { GameState, gameStateSchema, User } from "src/shared";
 
 interface GameSocketProps {
   roomId: string;
@@ -56,7 +22,8 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
     onMessage(evt) {
       console.log("onMessage");
       console.log(evt);
-      setGameState(JSON.parse(evt.data));
+      const gameState = gameStateSchema.parse(evt.data);
+      setGameState(gameState);
     },
   });
 
