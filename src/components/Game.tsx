@@ -1,8 +1,9 @@
-import { defineHex, Grid, Orientation, TupleCoordinates } from "honeycomb-grid";
-import { useReducer, useState } from "react";
-import BoardSideA from "src/assets/boardSideA.webp";
 import clsx from "clsx";
-import usePartySocket from "partysocket/react";
+import { defineHex, Grid, Orientation, TupleCoordinates } from "honeycomb-grid";
+import PartySocket from "partysocket";
+import { useState } from "react";
+import BoardSideA from "src/assets/boardSideA.webp";
+import { GameState } from "./GameSocket";
 
 const gridA: TupleCoordinates[] = [
   [0, 0],
@@ -44,7 +45,6 @@ const Cubes = {
   Spirit: "spirit",
 } as const;
 type Cube = (typeof Cubes)[keyof typeof Cubes];
-
 interface Tile {
   tokens: Token[];
   cube: Cube | null;
@@ -102,39 +102,52 @@ type ActionType =
   | { type: "addPlayer"; payload: string }
   | { type: "startGame"; payload: string };
 
-export function Game() {
+export interface User {
+  id: string;
+  name: string;
+}
+
+interface GameProps {
+  gameState: GameState;
+  socket: PartySocket;
+  // roomId: string;
+  user: User;
+}
+export function Game({ gameState, socket, user }: GameProps) {
+  console.log(gameState, user);
+
   const [width, setWidth] = useState(defaultWidth);
 
-  const [serverState, dispatch] = useReducer((state, action: ActionType) => {
-    switch (action.type) {
-      case "addPlayer":
-        const playerId = crypto.randomUUID();
-        return {
-          ...state,
-          players: [...state.players, playerId],
-        };
-      case "startGame":
-        if (state.players.length === 0) return state;
+  // const [serverState, dispatch] = useReducer((state, action: ActionType) => {
+  //   switch (action.type) {
+  //     case "addPlayer":
+  //       const playerId = crypto.randomUUID();
+  //       return {
+  //         ...state,
+  //         players: [...state.players, playerId],
+  //       };
+  //     case "startGame":
+  //       if (state.players.length === 0) return state;
 
-        const bag = shuffle(allTiles);
-        const centralBoard: CentralBoard = {
-          0: bag.splice(0, 3),
-          1: bag.splice(0, 3),
-          2: bag.splice(0, 3),
-          3: bag.splice(0, 3),
-          4: bag.splice(0, 3),
-        };
+  //       const bag = shuffle(allTiles);
+  //       const centralBoard: CentralBoard = {
+  //         0: bag.splice(0, 3),
+  //         1: bag.splice(0, 3),
+  //         2: bag.splice(0, 3),
+  //         3: bag.splice(0, 3),
+  //         4: bag.splice(0, 3),
+  //       };
 
-        return {
-          ...state,
-          bag: bag,
-          centralBoard: centralBoard,
-        };
-      default:
-        action satisfies never;
-        return state;
-    }
-  }, initialState);
+  //       return {
+  //         ...state,
+  //         bag: bag,
+  //         centralBoard: centralBoard,
+  //       };
+  //     default:
+  //       action satisfies never;
+  //       return state;
+  //   }
+  // }, initialState);
 
   const Hex = defineHex({
     dimensions: width / 14,
@@ -150,55 +163,46 @@ export function Game() {
 
   const [token, setToken] = useState<Token | null>(null);
 
-  const [myTiles, setMyTiles] = useState(() => {
-    const tiles: Record<string, Tile> = {};
-    Array.from(grid).forEach((tile) => {
-      const key = `${tile.q}-${tile.r}`;
-      tiles[key] = {
-        tokens: [],
-        cube: null,
-      };
-    });
-    return tiles;
-  });
-
-  const socket = usePartySocket({
-    // host defaults to the current URL if not set
-    //host: process.env.PARTYKIT_HOST,
-    // we could use any room name here
-    host: "localhost:1999",
-    room: "hello",
-    onMessage(evt) {
-      console.log("onMessage");
-      console.log(evt);
-    },
-  });
+  // const [myTiles, setMyTiles] = useState(() => {
+  //   const tiles: Record<string, Tile> = {};
+  //   Array.from(grid).forEach((tile) => {
+  //     const key = `${tile.q}-${tile.r}`;
+  //     tiles[key] = {
+  //       tokens: [],
+  //       cube: null,
+  //     };
+  //   });
+  //   return tiles;
+  // });
 
   return (
-    <div>
+    <div className="mb-60">
       <div className="relative inline-block">
         <img src={BoardSideA} alt="board" width={width} />
         <div className="absolute rotate-[0.5deg] inset-0">
           {Array.from(grid).map((hexes) => {
             const key = `${hexes.q}-${hexes.r}`;
-            const tile = myTiles[key];
-            const topToken = tile.tokens.at(-1);
-            const tokenPlacable = canPlaceToken(token, tile.tokens);
+            const tile = gameState.playerBoards[user.id]?.[key];
+            const tokens = tile?.tokens || [];
+            const topToken = tokens.at(-1);
+            const tokenPlacable = canPlaceToken(token, tokens);
 
             return (
               <div
                 onClick={() => {
-                  const newTiles = { ...myTiles };
-                  // Token
                   if (!token) return;
-                  if (!canPlaceToken(token, tile.tokens)) return;
-                  const newTokens = [...tile.tokens, token];
-                  newTiles[key] = {
-                    ...myTiles[key],
-                    tokens: newTokens,
-                  };
-                  setToken(null);
-                  setMyTiles(newTiles);
+                  if (!tokenPlacable) return;
+
+                  socket.send(JSON.stringify({ type: "place", token: token }));
+                  // const newTiles = { ...myTiles };
+                  // // Token
+                  // const newTokens = [...tile.tokens, token];
+                  // newTiles[key] = {
+                  //   ...myTiles[key],
+                  //   tokens: newTokens,
+                  // };
+                  // setToken(null);
+                  // setMyTiles(newTiles);
                 }}
                 key={key}
                 style={{
@@ -211,7 +215,7 @@ export function Game() {
                 className={clsx(
                   "absolute size-10 hover:bg-black/50! hexagon p-4 text-[8px] select-none",
                   tokenPlacable &&
-                    "ring-4 ring-green-500 shadow-2xl bg-white/50!"
+                    "ring-4 ring-green-500 shadow-2xl bg-white/50!",
                 )}
               >
                 {JSON.stringify(tile, null, 2)}
@@ -238,24 +242,34 @@ export function Game() {
           null
         </button>
       </div>
-      <div className="text-white">Current Token: {token}</div>
-      <button
-        onClick={() => dispatch({ type: "addPlayer", payload: "Player 1" })}
+      <div className="flex gap-1">
+        <div className="text-white font-bold">Current Token: </div>
+        <div>{token}</div>
+      </div>
+      {/* <button
+        onClick={() =>
+          socket.send(
+            JSON.stringify({ type: "addPlayer", payload: "Player 1" }),
+          )
+        }
         className="text-white"
       >
         Add Player
-      </button>
-      <div className="text-white">Players: {serverState.players}</div>
-      <button
+      </button> */}
+      <div className="text-white">
+        <div className="font-bold">Players:</div>
+        {gameState.players.map((player) => (
+          <div key={player.id}>{player.name}</div>
+        ))}
+      </div>
+      {/* <button
         className="text-white"
         onClick={() => {
-          console.log("hellos");
-
           socket.send("hello");
         }}
       >
         Party
-      </button>
+      </button> */}
     </div>
   );
 }
