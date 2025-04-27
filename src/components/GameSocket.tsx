@@ -1,14 +1,14 @@
 import usePartySocket from "partysocket/react";
 import { Game } from "./Game";
 import { useState } from "react";
-import { GameState, gameStateSchema, User } from "src/shared";
+import { PublicGameState, publicGameStateSchema, User } from "src/shared";
 
 interface GameSocketProps {
   roomId: string;
   user: User;
 }
 export function GameSocket({ roomId, user }: GameSocketProps) {
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gameState, setGameState] = useState<PublicGameState | null>(null);
 
   const socket = usePartySocket({
     // host defaults to the current URL if not set
@@ -22,8 +22,12 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
     onMessage(evt) {
       console.log("onMessage");
       console.log(evt);
-      const gameState = gameStateSchema.parse(evt.data);
-      setGameState(gameState);
+      try {
+        const gameState = publicGameStateSchema.parse(JSON.parse(evt.data));
+        setGameState(gameState);
+      } catch (error) {
+        console.error(error);
+      }
     },
   });
 

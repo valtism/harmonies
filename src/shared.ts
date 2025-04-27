@@ -3,7 +3,14 @@ import { z } from "zod";
 const tupleCoordinatesSchema = z.array(z.tuple([z.number(), z.number()]));
 export type TupleCoordinates = z.infer<typeof tupleCoordinatesSchema>;
 
-const tokenSchema = z.enum(["blue", "gray", "brown", "green", "yellow", "red"]);
+export const tokenSchema = z.enum([
+  "blue",
+  "gray",
+  "brown",
+  "green",
+  "yellow",
+  "red",
+]);
 export type TokenType = z.infer<typeof tokenSchema>;
 export const Token = {
   Blue: "blue",
@@ -42,22 +49,35 @@ const centralBoardSchema = z.object({
 });
 export type CentralBoard = z.infer<typeof centralBoardSchema>;
 
-export const gameStateSchema = z.object({
+export const publicGameStateSchema = z.object({
   grid: tupleCoordinatesSchema,
   players: z.array(userSchema),
   currentPlayerId: z.string().nullable(),
   board: z.enum(["A", "B"]),
-  bag: z.array(tokenSchema),
   centralBoard: centralBoardSchema,
   playerBoards: z.record(z.string(), z.record(z.string(), tileSchema)),
 });
 
-export type GameState = z.infer<typeof gameStateSchema>;
+export type PublicGameState = z.infer<typeof publicGameStateSchema>;
 
-interface StartGameAction {
-  type: "startGame";
-}
+export const privateGameStateSchema = z.object({
+  bag: z.array(tokenSchema),
+});
 
-export type ActionType =
-  | { type: "addPlayer"; payload: string }
-  | { type: "startGame"; payload: string };
+export type PrivateGameState = z.infer<typeof privateGameStateSchema>;
+
+const startGameActionSchema = z.object({
+  type: z.literal("startGame"),
+});
+
+const addPlayerActionSchema = z.object({
+  type: z.literal("addPlayer"),
+  payload: z.string(),
+});
+
+export const actionSchema = z.union([
+  startGameActionSchema,
+  addPlayerActionSchema,
+]);
+
+export type ActionType = z.infer<typeof actionSchema>;

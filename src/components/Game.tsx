@@ -4,20 +4,24 @@ import PartySocket from "partysocket";
 import { useState } from "react";
 import BoardSideA from "src/assets/boardSideA.webp";
 import { User } from "src/routes/$roomId";
-import { GameState, Token, TokenType } from "src/shared";
+import { ActionType, PublicGameState, Token, TokenType } from "src/shared";
 
 const defaultWidth = 726;
 
 interface GameProps {
-  gameState: GameState;
+  gameState: PublicGameState;
   socket: PartySocket;
   // roomId: string;
   user: User;
 }
 export function Game({ gameState, socket, user }: GameProps) {
-  console.log(gameState, user);
+  console.log(gameState);
 
   const [width, setWidth] = useState(defaultWidth);
+
+  function sendAction(action: ActionType) {
+    socket.send(JSON.stringify(action));
+  }
 
   const Hex = defineHex({
     dimensions: width / 14,
@@ -135,11 +139,9 @@ export function Game({ gameState, socket, user }: GameProps) {
       <button
         className="bg-stone-100 hover:bg-stone-300 text-stone-900 px-2 py-1 rounded"
         onClick={() => {
-          socket.send(
-            JSON.stringify({
-              type: "a",
-            }),
-          );
+          sendAction({
+            type: "startGame",
+          });
         }}
       >
         Start Game

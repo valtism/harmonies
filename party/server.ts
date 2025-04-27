@@ -1,11 +1,12 @@
 import "@total-typescript/ts-reset";
 import type * as Party from "partykit/server";
 import {
-  GameState,
+  PrivateGameState,
+  PublicGameState,
   Token,
-  userSchema,
-  ActionType,
   TupleCoordinates,
+  actionSchema,
+  userSchema,
 } from "../src/shared";
 
 const gridA: TupleCoordinates = [
@@ -50,12 +51,11 @@ function shuffle<T>(array: T[]) {
     .map(({ value }) => value);
 }
 
-const initialState: GameState = {
+const initialState: PublicGameState = {
   grid: gridA,
   players: [],
   currentPlayerId: null,
   board: "A",
-  bag: [],
   centralBoard: {
     0: [],
     1: [],
@@ -67,11 +67,15 @@ const initialState: GameState = {
 };
 
 export default class Server implements Party.Server {
-  gameState: GameState;
-  history: GameState[];
+  privateGameState: PrivateGameState;
+  publicGameState: PublicGameState;
+  history: PublicGameState[];
 
   constructor(readonly room: Party.Room) {
-    this.gameState = structuredClone(initialState);
+    this.publicGameState = structuredClone(initialState);
+    this.privateGameState = {
+      bag: shuffle([...allTiles]),
+    };
     this.history = [];
   }
 
@@ -89,21 +93,21 @@ export default class Server implements Party.Server {
     );
     const user = userSchema.parse(userJson);
 
-    const alreadyAdded = this.gameState.players.some(
+    const alreadyAdded = this.publicGameState.players.some(
       (player) => player.id === user.id,
     );
 
     if (!alreadyAdded) {
-      this.gameState.players.push(user);
-      this.gameState.playerBoards[user.id] = {};
+      this.publicGameState.players.push(user);
+      this.publicGameState.playerBoards[user.id] = {};
     }
 
-    this.room.broadcast(JSON.stringify(this.gameState));
+    this.room.broadcast(JSON.stringify(this.publicGameState));
   }
 
   onMessage(message: string, sender: Party.Connection) {
     try {
-      const action = JSON.parse(message) as ActionType;
+      const action = actionSchema.parse(JSON.parse(message));
 
       switch (action.type) {
         // case "addPlayer":
@@ -142,29 +146,36 @@ export default class Server implements Party.Server {
   // }
 
   startGame() {
-    if (this.gameState.players.length < 2) {
+    if (this.publicGameState.players.length < 2) {
       throw new Error("Need at least 2 players to start");
     }
 
-    this.gameState.bag = shuffle([...allTiles]);
-    this.gameState.currentPlayerId = this.gameState.players[0].id;
+    // Select a random player to start the game
+    const randomIndex = Math.floor(
+      Math.random() * this.publicGameState.players.length,
+    );
+    this.publicGameState.currentPlayerId =
+      this.publicGameState.players[randomIndex].id;
 
     // Initialize empty player boards
-    this.gameState.playerBoards = this.gameState.players.reduce(
+    this.publicGameState.playerBoards = this.publicGameState.players.reduce(
       (acc, player) => {
-        acc[player.id] = [];
+        acc[player.id] = {};
         return acc;
       },
       {},
     );
 
+    this.publicGameState.centralBoard = {
+      0: this.privateGameState.bag.splice(0, 3),
+      1: this.privateGameState.bag.splice(0, 3),
+      2: this.privateGameState.bag.splice(0, 3),
+      3: this.privateGameState.bag.splice(0, 3),
+      4: this.privateGameState.bag.splice(0, 3),
+    };
+
     // Broadcast game start
-    this.room.broadcast(
-      JSON.stringify({
-        type: "gameStarted",
-        gameState: this.gameState,
-      }),
-    );
+    this.room.broadcast(JSON.stringify(this.publicGameState));
   }
 }
 
