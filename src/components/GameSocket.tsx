@@ -12,7 +12,7 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
 
   const socket = usePartySocket({
     // host defaults to the current URL if not set
-    //host: process.env.PARTYKIT_HOST,
+    // host: process.env.PARTYKIT_HOST,
     // we could use any room name here
     host: "localhost:1999",
     room: roomId,
@@ -30,8 +30,6 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
       }
     },
   });
-
-  console.log({ gameState });
 
   if (!gameState) return null;
 

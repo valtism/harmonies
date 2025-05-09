@@ -3,16 +3,9 @@ import { z } from "zod";
 const tupleCoordinatesSchema = z.array(z.tuple([z.number(), z.number()]));
 export type TupleCoordinates = z.infer<typeof tupleCoordinatesSchema>;
 
-export const tokenSchema = z.enum([
-  "blue",
-  "gray",
-  "brown",
-  "green",
-  "yellow",
-  "red",
-]);
-export type TokenType = z.infer<typeof tokenSchema>;
-export const Token = {
+const colorSchema = z.enum(["blue", "gray", "brown", "green", "yellow", "red"]);
+export type ColorType = z.infer<typeof colorSchema>;
+export const Color = {
   Blue: "blue",
   Gray: "gray",
   Brown: "brown",
@@ -20,6 +13,12 @@ export const Token = {
   Yellow: "yellow",
   Red: "red",
 } as const;
+
+export const tokenSchema = z.object({
+  id: z.string().uuid(),
+  color: colorSchema,
+});
+export type TokenType = z.infer<typeof tokenSchema>;
 
 const cubeSchema = z.enum(["animal", "spirit"]);
 export type CubeType = z.infer<typeof cubeSchema>;
@@ -40,13 +39,14 @@ export const userSchema = z.object({
 });
 export type User = z.infer<typeof userSchema>;
 
-const centralBoardSchema = z.object({
-  0: z.array(tokenSchema),
-  1: z.array(tokenSchema),
-  2: z.array(tokenSchema),
-  3: z.array(tokenSchema),
-  4: z.array(tokenSchema),
-});
+const centralBoardSchema = z.tuple([
+  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
+  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
+  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
+  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
+  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
+]);
+
 export type CentralBoard = z.infer<typeof centralBoardSchema>;
 
 export const publicGameStateSchema = z.object({

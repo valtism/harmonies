@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-// 4 character hex code
+// 6 character hex code
 const randomRoomId = Math.floor(Math.random() * 16777215).toString(16);
 
 export const Route = createFileRoute("/")({

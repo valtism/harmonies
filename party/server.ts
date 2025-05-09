@@ -1,9 +1,9 @@
 import "@total-typescript/ts-reset";
 import type * as Party from "partykit/server";
 import {
+  Color,
   PrivateGameState,
   PublicGameState,
-  Token,
   TupleCoordinates,
   actionSchema,
   userSchema,
@@ -36,12 +36,12 @@ const gridA: TupleCoordinates = [
 ];
 
 const allTiles = [
-  ...Array.from({ length: 23 }).map(() => Token.Blue),
-  ...Array.from({ length: 23 }).map(() => Token.Gray),
-  ...Array.from({ length: 21 }).map(() => Token.Brown),
-  ...Array.from({ length: 19 }).map(() => Token.Green),
-  ...Array.from({ length: 19 }).map(() => Token.Yellow),
-  ...Array.from({ length: 15 }).map(() => Token.Red),
+  ...Array.from({ length: 23 }).map(() => Color.Blue),
+  ...Array.from({ length: 23 }).map(() => Color.Gray),
+  ...Array.from({ length: 21 }).map(() => Color.Brown),
+  ...Array.from({ length: 19 }).map(() => Color.Green),
+  ...Array.from({ length: 19 }).map(() => Color.Yellow),
+  ...Array.from({ length: 15 }).map(() => Color.Red),
 ];
 
 function shuffle<T>(array: T[]) {
@@ -51,18 +51,17 @@ function shuffle<T>(array: T[]) {
     .map(({ value }) => value);
 }
 
+const mockToken = {
+  id: "73dcdb31-f028-418c-9b70-f9181265e223",
+  color: Color.Blue,
+};
+
 const initialState: PublicGameState = {
   grid: gridA,
   players: [],
   currentPlayerId: null,
   board: "A",
-  centralBoard: {
-    0: [],
-    1: [],
-    2: [],
-    3: [],
-    4: [],
-  },
+  centralBoard: [null, null, null, null, null],
   playerBoards: {},
 };
 
@@ -74,7 +73,10 @@ export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {
     this.publicGameState = structuredClone(initialState);
     this.privateGameState = {
-      bag: shuffle([...allTiles]),
+      bag: shuffle([...allTiles]).map((color) => ({
+        id: crypto.randomUUID(),
+        color,
+      })),
     };
     this.history = [];
   }
@@ -85,16 +87,16 @@ export default class Server implements Party.Server {
       `Connected:
     id: ${conn.id}
     room: ${this.room.id}
-    url: ${new URL(ctx.request.url).pathname}`,
+    url: ${new URL(ctx.request.url).pathname}`
     );
 
     const userJson = JSON.parse(
-      new URL(ctx.request.url).searchParams.get("user") || "",
+      new URL(ctx.request.url).searchParams.get("user") || ""
     );
     const user = userSchema.parse(userJson);
 
     const alreadyAdded = this.publicGameState.players.some(
-      (player) => player.id === user.id,
+      (player) => player.id === user.id
     );
 
     if (!alreadyAdded) {
@@ -127,7 +129,7 @@ export default class Server implements Party.Server {
     this.room.broadcast(
       `${sender.id}: ${message}`,
       // ...except for the connection it came from
-      [sender.id],
+      [sender.id]
     );
   }
 
@@ -152,7 +154,7 @@ export default class Server implements Party.Server {
 
     // Select a random player to start the game
     const randomIndex = Math.floor(
-      Math.random() * this.publicGameState.players.length,
+      Math.random() * this.publicGameState.players.length
     );
     this.publicGameState.currentPlayerId =
       this.publicGameState.players[randomIndex].id;
@@ -163,16 +165,16 @@ export default class Server implements Party.Server {
         acc[player.id] = {};
         return acc;
       },
-      {},
+      {}
     );
 
-    this.publicGameState.centralBoard = {
-      0: this.privateGameState.bag.splice(0, 3),
-      1: this.privateGameState.bag.splice(0, 3),
-      2: this.privateGameState.bag.splice(0, 3),
-      3: this.privateGameState.bag.splice(0, 3),
-      4: this.privateGameState.bag.splice(0, 3),
-    };
+    for (let i = 0; i < 5; i++) {
+      this.publicGameState.centralBoard[i] = [
+        this.privateGameState.bag.pop()!,
+        this.privateGameState.bag.pop()!,
+        this.privateGameState.bag.pop()!,
+      ];
+    }
 
     // Broadcast game start
     this.room.broadcast(JSON.stringify(this.publicGameState));

@@ -1,10 +1,17 @@
 import clsx from "clsx";
 import { defineHex, Grid, Orientation } from "honeycomb-grid";
 import PartySocket from "partysocket";
-import { useState } from "react";
+import {
+  startTransition,
+  useState,
+  unstable_ViewTransition as ViewTransition,
+} from "react";
 import BoardSideA from "src/assets/boardSideA.webp";
+import TokenBlue from "src/assets/tokenBlue.webp";
+import { CentralBoard } from "src/components/CentralBoard";
+import { PlayerBoard } from "src/components/Playerboard";
 import { User } from "src/routes/$roomId";
-import { ActionType, PublicGameState, Token, TokenType } from "src/shared";
+import { ActionType, Color, PublicGameState, TokenType } from "src/shared";
 
 const defaultWidth = 726;
 
@@ -49,67 +56,41 @@ export function Game({ gameState, socket, user }: GameProps) {
   //   return tiles;
   // });
 
+  const [here, setHere] = useState(false);
+
   return (
     <div className="mb-60">
-      <div className="relative inline-block">
-        <img src={BoardSideA} alt="board" width={width} />
-        <div className="absolute rotate-[0.5deg] inset-0">
-          {Array.from(grid).map((hexes) => {
-            const key = `${hexes.q}-${hexes.r}`;
-            const tile = gameState.playerBoards[user.id]?.[key];
-            const tokens = tile?.tokens || [];
-            const topToken = tokens.at(-1);
-            const tokenPlacable = canPlaceToken(token, tokens);
+      <CentralBoard
+        state={gameState.centralBoard}
+        onClick={() => startTransition(() => setHere(true))}
+      />
+      <PlayerBoard
+        gameState={gameState}
+        socket={socket}
+        token={token}
+        user={user}
+      />
 
-            return (
-              <div
-                onClick={() => {
-                  if (!token) return;
-                  if (!tokenPlacable) return;
-
-                  socket.send(JSON.stringify({ type: "place", token: token }));
-                  // const newTiles = { ...myTiles };
-                  // // Token
-                  // const newTokens = [...tile.tokens, token];
-                  // newTiles[key] = {
-                  //   ...myTiles[key],
-                  //   tokens: newTokens,
-                  // };
-                  // setToken(null);
-                  // setMyTiles(newTiles);
-                }}
-                key={key}
-                style={{
-                  top: hexes.r * (width / 242) + width / 182 + hexes.y,
-                  left: hexes.q * (width / 242) + width / 7.5 + hexes.x,
-                  width: hexes.width,
-                  height: hexes.height,
-                  backgroundColor: topToken,
-                }}
-                className={clsx(
-                  "absolute size-10 hover:bg-black/50! hexagon p-4 text-[8px] select-none",
-                  tokenPlacable &&
-                    "ring-4 ring-green-500 shadow-2xl bg-white/50!",
-                )}
-              >
-                {JSON.stringify(tile, null, 2)}
-              </div>
-            );
-          })}
-        </div>
+      <div
+        className="size-20 bg-stone-400"
+        onClick={() => startTransition(() => setHere(false))}
+      >
+        <ViewTransition name="hello">
+          {here && <img src={TokenBlue} alt="token blue" width={30} />}
+        </ViewTransition>
       </div>
       <div className="flex">
-        {Object.values(Token).map((token) => (
+        {Object.values(Color).map((color) => (
           <button
-            key={token}
-            onClick={() => setToken(token)}
+            key={color}
+            // onClick={() => setToken(color)}
             className="border border-gray-400 rounded px-4 py-2 text-white hover:bg-gray-600"
           >
-            {token}
+            {color}
           </button>
         ))}
         <button
-          key={token}
+          key={token?.id}
           onClick={() => setToken(null)}
           className="border border-gray-400 rounded px-4 py-2 text-white hover:bg-gray-600"
         >
@@ -118,7 +99,7 @@ export function Game({ gameState, socket, user }: GameProps) {
       </div>
       <div className="flex gap-1">
         <div className="text-white font-bold">Current Token: </div>
-        <div>{token}</div>
+        {/* <div>{token}</div> */}
       </div>
       {/* <button
         onClick={() =>
@@ -148,53 +129,4 @@ export function Game({ gameState, socket, user }: GameProps) {
       </button>
     </div>
   );
-}
-
-function canPlaceToken(token: TokenType | null, stack: TokenType[]) {
-  if (!token) return false;
-  const topToken = stack.at(-1);
-
-  if (!topToken) {
-    return true;
-  }
-
-  if (stack.length === 1) {
-    switch (token) {
-      case Token.Blue:
-      case Token.Yellow:
-        return false;
-      case Token.Gray:
-        return topToken === Token.Gray;
-      case Token.Brown:
-        return topToken === Token.Brown;
-      case Token.Green:
-        return topToken === Token.Brown;
-      case Token.Red:
-        return [Token.Gray, Token.Brown, Token.Red].includes(topToken);
-      default:
-        token satisfies never;
-        return false;
-    }
-  }
-
-  if (stack.length === 2) {
-    switch (token) {
-      case Token.Blue:
-      case Token.Yellow:
-      case Token.Brown:
-      case Token.Red:
-        return false;
-      case Token.Gray:
-        return topToken === Token.Gray;
-      case Token.Green:
-        return topToken === Token.Brown;
-      default:
-        token satisfies never;
-        return false;
-    }
-  }
-
-  if (stack.length > 2) {
-    return false;
-  }
 }
