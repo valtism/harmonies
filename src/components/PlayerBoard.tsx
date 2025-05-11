@@ -3,14 +3,14 @@ import { defineHex, Grid, Orientation } from "honeycomb-grid";
 import PartySocket from "partysocket";
 import BoardSideA from "src/assets/boardSideA.webp";
 import { User } from "src/routes/$roomId";
-import { Color, PublicGameState, TokenType } from "src/shared";
+import { Color, PublicGameState, PublicToken } from "src/shared";
 
 const width = 726;
 
 interface PlayerBoardProps {
   gameState: PublicGameState;
   user: User;
-  token: TokenType | null;
+  token: PublicToken | null;
   socket: PartySocket;
 }
 export function PlayerBoard({
@@ -33,7 +33,7 @@ export function PlayerBoard({
       <div className="absolute rotate-[0.5deg] inset-0">
         {Array.from(grid).map((hexes) => {
           const key = `${hexes.q}-${hexes.r}`;
-          const tile = gameState.playerBoards[user.id]?.[key];
+          const tile = gameState.players[user.id]?.[key];
           const tokens = tile?.tokens || [];
           const topToken = tokens.at(-1);
           const tokenPlacable = canPlaceToken(token, tokens);
@@ -77,7 +77,7 @@ export function PlayerBoard({
   );
 }
 
-function canPlaceToken(token: TokenType | null, stack: TokenType[]) {
+function canPlaceToken(token: PublicToken | null, stack: PublicToken[]) {
   if (!token) return false;
   const topToken = stack.at(-1);
 

@@ -11,7 +11,7 @@ import TokenBlue from "src/assets/tokenBlue.webp";
 import { CentralBoard } from "src/components/CentralBoard";
 import { PlayerBoard } from "src/components/Playerboard";
 import { User } from "src/routes/$roomId";
-import { ActionType, Color, PublicGameState, TokenType } from "src/shared";
+import { ActionType, Color, PublicGameState, PublicToken } from "src/shared";
 
 const defaultWidth = 726;
 
@@ -42,7 +42,7 @@ export function Game({ gameState, socket, user }: GameProps) {
 
   const grid = new Grid(Hex, gameState.grid);
 
-  const [token, setToken] = useState<TokenType | null>(null);
+  const [token, setToken] = useState<PublicToken | null>(null);
 
   // const [myTiles, setMyTiles] = useState(() => {
   //   const tiles: Record<string, Tile> = {};
@@ -64,6 +64,7 @@ export function Game({ gameState, socket, user }: GameProps) {
         state={gameState.centralBoard}
         onClick={() => startTransition(() => setHere(true))}
       />
+      <div></div>
       <PlayerBoard
         gameState={gameState}
         socket={socket}
@@ -113,7 +114,7 @@ export function Game({ gameState, socket, user }: GameProps) {
       </button> */}
       <div className="text-white">
         <div className="font-bold">Players:</div>
-        {gameState.players.map((player) => (
+        {gameState.playerList.map((player) => (
           <div key={player.id}>{player.name}</div>
         ))}
       </div>

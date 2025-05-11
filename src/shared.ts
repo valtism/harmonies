@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-const tupleCoordinatesSchema = z.array(z.tuple([z.number(), z.number()]));
-export type TupleCoordinates = z.infer<typeof tupleCoordinatesSchema>;
-
 const colorSchema = z.enum(["blue", "gray", "brown", "green", "yellow", "red"]);
 export type ColorType = z.infer<typeof colorSchema>;
 export const Color = {
@@ -14,11 +11,56 @@ export const Color = {
   Red: "red",
 } as const;
 
-export const tokenSchema = z.object({
+const tileCoordinateSchema = z.tuple([z.number(), z.number()]);
+export type TileCoordinate = z.infer<typeof tileCoordinateSchema>;
+
+export const publicTokenSchema = z.object({
   id: z.string().uuid(),
   color: colorSchema,
 });
-export type TokenType = z.infer<typeof tokenSchema>;
+export type PublicToken = z.infer<typeof publicTokenSchema>;
+
+const centralBoardPositionSchema = z.object({
+  zone: z.number(),
+  place: z.number(),
+});
+const takenPositionSchema = z.object({
+  player: z.string(),
+  place: z.number(),
+});
+const playerBoardPositionSchema = z.object({
+  player: z.string(),
+  place: z.object({
+    coords: z.string(),
+    position: z.number(),
+  }),
+});
+const privateTokenSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("pouch"),
+    })
+    .merge(publicTokenSchema),
+  z
+    .object({
+      type: z.literal("centralBoard"),
+      position: centralBoardPositionSchema,
+    })
+    .merge(publicTokenSchema),
+  z
+    .object({
+      type: z.literal("taken"),
+      position: takenPositionSchema,
+    })
+    .merge(publicTokenSchema),
+  z
+    .object({
+      type: z.literal("playerBoard"),
+      position: playerBoardPositionSchema,
+    })
+    .merge(publicTokenSchema),
+]);
+export type PrivateToken = z.infer<typeof privateTokenSchema>;
 
 const cubeSchema = z.enum(["animal", "spirit"]);
 export type CubeType = z.infer<typeof cubeSchema>;
@@ -28,7 +70,7 @@ export const Cube = {
 } as const;
 
 const tileSchema = z.object({
-  tokens: tokenSchema.array(),
+  tokens: publicTokenSchema.array(),
   cube: cubeSchema.nullable(),
 });
 export type Tile = z.infer<typeof tileSchema>;
@@ -39,29 +81,46 @@ export const userSchema = z.object({
 });
 export type User = z.infer<typeof userSchema>;
 
+const centralBoardZoneSchema = z.tuple([
+  publicTokenSchema.nullable(),
+  publicTokenSchema.nullable(),
+  publicTokenSchema.nullable(),
+]);
 const centralBoardSchema = z.tuple([
-  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
-  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
-  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
-  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
-  z.tuple([tokenSchema, tokenSchema, tokenSchema]).nullable(),
+  centralBoardZoneSchema,
+  centralBoardZoneSchema,
+  centralBoardZoneSchema,
+  centralBoardZoneSchema,
+  centralBoardZoneSchema,
 ]);
 
 export type CentralBoard = z.infer<typeof centralBoardSchema>;
 
+const playerBoardSchema = z.record(z.string(), tileSchema);
+
+const playerSchema = z.object({
+  board: playerBoardSchema,
+  takenTokens: z.tuple([
+    publicTokenSchema.nullable(),
+    publicTokenSchema.nullable(),
+    publicTokenSchema.nullable(),
+  ]),
+});
+
 export const publicGameStateSchema = z.object({
-  grid: tupleCoordinatesSchema,
-  players: z.array(userSchema),
+  grid: z.array(tileCoordinateSchema),
+  playerList: z.array(userSchema),
   currentPlayerId: z.string().nullable(),
-  board: z.enum(["A", "B"]),
+  boardType: z.enum(["A", "B"]),
   centralBoard: centralBoardSchema,
-  playerBoards: z.record(z.string(), z.record(z.string(), tileSchema)),
+  players: z.record(z.string(), playerSchema),
 });
 
 export type PublicGameState = z.infer<typeof publicGameStateSchema>;
 
 export const privateGameStateSchema = z.object({
-  bag: z.array(tokenSchema),
+  tokensById: z.record(z.string(), privateTokenSchema),
+  pouch: z.array(privateTokenSchema),
 });
 
 export type PrivateGameState = z.infer<typeof privateGameStateSchema>;

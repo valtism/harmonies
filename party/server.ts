@@ -4,12 +4,15 @@ import {
   Color,
   PrivateGameState,
   PublicGameState,
-  TupleCoordinates,
+  PrivateToken,
+  TileCoordinate,
   actionSchema,
   userSchema,
+  CentralBoard,
+  PublicToken,
 } from "../src/shared";
 
-const gridA: TupleCoordinates = [
+const gridA: TileCoordinate[] = [
   [0, 0],
   [0, 1],
   [0, 2],
@@ -35,7 +38,7 @@ const gridA: TupleCoordinates = [
   [4, 2],
 ];
 
-const allTiles = [
+const allTokens = [
   ...Array.from({ length: 23 }).map(() => Color.Blue),
   ...Array.from({ length: 23 }).map(() => Color.Gray),
   ...Array.from({ length: 21 }).map(() => Color.Brown),
@@ -51,18 +54,19 @@ function shuffle<T>(array: T[]) {
     .map(({ value }) => value);
 }
 
-const mockToken = {
-  id: "73dcdb31-f028-418c-9b70-f9181265e223",
-  color: Color.Blue,
-};
-
 const initialState: PublicGameState = {
   grid: gridA,
-  players: [],
+  playerList: [],
   currentPlayerId: null,
-  board: "A",
-  centralBoard: [null, null, null, null, null],
-  playerBoards: {},
+  boardType: "A",
+  centralBoard: [
+    [null, null, null],
+    [null, null, null],
+    [null, null, null],
+    [null, null, null],
+    [null, null, null],
+  ],
+  players: {},
 };
 
 export default class Server implements Party.Server {
@@ -72,11 +76,25 @@ export default class Server implements Party.Server {
 
   constructor(readonly room: Party.Room) {
     this.publicGameState = structuredClone(initialState);
-    this.privateGameState = {
-      bag: shuffle([...allTiles]).map((color) => ({
+
+    const pouch: PrivateGameState["pouch"] = shuffle([...allTokens]).map(
+      (color) => ({
         id: crypto.randomUUID(),
         color,
-      })),
+        type: "pouch",
+      })
+    );
+
+    const tokensById = pouch.reduce<PrivateGameState["tokensById"]>(
+      (acc, token) => {
+        acc[token.id] = token;
+        return acc;
+      },
+      {}
+    );
+    this.privateGameState = {
+      tokensById,
+      pouch,
     };
     this.history = [];
   }
@@ -95,13 +113,16 @@ export default class Server implements Party.Server {
     );
     const user = userSchema.parse(userJson);
 
-    const alreadyAdded = this.publicGameState.players.some(
+    const alreadyAdded = this.publicGameState.playerList.some(
       (player) => player.id === user.id
     );
 
     if (!alreadyAdded) {
-      this.publicGameState.players.push(user);
-      this.publicGameState.playerBoards[user.id] = {};
+      this.publicGameState.playerList.push(user);
+      this.publicGameState.players[user.id] = {
+        board: {},
+        takenTokens: [null, null, null],
+      };
     }
 
     this.room.broadcast(JSON.stringify(this.publicGameState));
@@ -133,34 +154,20 @@ export default class Server implements Party.Server {
     );
   }
 
-  // addPlayer(playerId: string) {
-  //   if (this.gameState.players.length >= 4) {
-  //     throw new Error("Maximum number of players reached");
-  //   }
-
-  //   this.gameState.players.push(playerId);
-
-  //   this.room.broadcast(
-  //     `${playerId} joined the game`,
-  //     // ...except for the connection it came from
-  //     [playerId],
-  //   );
-  // }
-
   startGame() {
-    if (this.publicGameState.players.length < 2) {
+    if (this.publicGameState.playerList.length < 2) {
       throw new Error("Need at least 2 players to start");
     }
 
     // Select a random player to start the game
     const randomIndex = Math.floor(
-      Math.random() * this.publicGameState.players.length
+      Math.random() * this.publicGameState.playerList.length
     );
     this.publicGameState.currentPlayerId =
-      this.publicGameState.players[randomIndex].id;
+      this.publicGameState.playerList[randomIndex].id;
 
     // Initialize empty player boards
-    this.publicGameState.playerBoards = this.publicGameState.players.reduce(
+    this.publicGameState.players = this.publicGameState.playerList.reduce(
       (acc, player) => {
         acc[player.id] = {};
         return acc;
@@ -169,14 +176,65 @@ export default class Server implements Party.Server {
     );
 
     for (let i = 0; i < 5; i++) {
-      this.publicGameState.centralBoard[i] = [
-        this.privateGameState.bag.pop()!,
-        this.privateGameState.bag.pop()!,
-        this.privateGameState.bag.pop()!,
-      ];
+      for (let j = 0; j < 3; j++) {
+        const token = this.privateGameState.pouch.pop()!;
+        token.type = "centralBoard";
+        // Make typescript happy
+        if (token.type !== "centralBoard") return;
+        token.position = {
+          zone: i,
+          place: j,
+        };
+      }
     }
 
     // Broadcast game start
+    this.allocateAndBroadcast();
+  }
+
+  allocateTokens() {
+    const pouchTokens: PrivateGameState["pouch"] = [];
+    const centralBoardTokens: PublicGameState["centralBoard"] = [
+      [null, null, null],
+      [null, null, null],
+      [null, null, null],
+      [null, null, null],
+      [null, null, null],
+    ];
+    const player: PublicGameState["players"] = {};
+
+    // Iterate over the tokens and distribute them
+    for (const key in this.privateGameState.tokensById) {
+      const token = this.privateGameState.tokensById[key];
+      switch (token.type) {
+        case "pouch":
+          pouchTokens.push(token);
+          break;
+        case "centralBoard":
+          centralBoardTokens[token.position.zone]![token.position.place] =
+            token;
+          break;
+        case "taken":
+          player[token.position.player].takenTokens[token.position.place] =
+            token;
+          break;
+        case "playerBoard":
+          player[token.position.player].board[
+            token.position.place.coords
+          ].tokens[token.position.place.position] = token;
+          break;
+        default:
+          token satisfies never;
+      }
+    }
+
+    this.privateGameState.pouch = pouchTokens;
+    this.publicGameState.centralBoard = centralBoardTokens;
+    this.publicGameState.players = player;
+  }
+
+  allocateAndBroadcast() {
+    this.allocateTokens();
     this.room.broadcast(JSON.stringify(this.publicGameState));
   }
 }

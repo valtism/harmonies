@@ -68,8 +68,6 @@ interface BoardZoneProps {
   style?: CSSProperties;
 }
 function BoardZone({ tokens, onClick, style }: BoardZoneProps) {
-  if (!tokens) return null;
-
   return (
     <button
       className="absolute flex items-center justify-center hover:bg-black/30"
@@ -81,6 +79,7 @@ function BoardZone({ tokens, onClick, style }: BoardZoneProps) {
       }}
     >
       {tokens.map((token, index) => {
+        if (!token) return null;
         const style = tokenStyles[index];
         return (
           <ViewTransition key={token.id} name={token.id}>
