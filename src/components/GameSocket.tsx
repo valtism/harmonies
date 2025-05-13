@@ -1,7 +1,7 @@
 import usePartySocket from "partysocket/react";
-import { Game } from "./Game";
 import { useState } from "react";
-import { PublicGameState, publicGameStateSchema, User } from "src/shared";
+import { PublicGameState, User } from "src/shared";
+import { Game } from "./Game";
 
 interface GameSocketProps {
   roomId: string;
@@ -20,14 +20,8 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
       user: JSON.stringify(user),
     }),
     onMessage(evt) {
-      console.log("onMessage");
-      console.log(evt);
-      try {
-        const gameState = publicGameStateSchema.parse(JSON.parse(evt.data));
-        setGameState(gameState);
-      } catch (error) {
-        console.error(error);
-      }
+      const gameState = JSON.parse(evt.data) as PublicGameState;
+      setGameState(gameState);
     },
   });
 

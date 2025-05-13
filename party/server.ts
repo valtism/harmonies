@@ -4,15 +4,14 @@ import {
   Color,
   PrivateGameState,
   PublicGameState,
-  PrivateToken,
-  TileCoordinate,
+  // TileCoordinate,
   actionSchema,
   userSchema,
-  CentralBoard,
-  PublicToken,
 } from "../src/shared";
 
-const gridA: TileCoordinate[] = [
+type StatefulPartyConnection = Party.Connection<{ userId: string }>;
+
+const gridA: PublicGameState["grid"] = [
   [0, 0],
   [0, 1],
   [0, 2],
@@ -82,7 +81,7 @@ export default class Server implements Party.Server {
         id: crypto.randomUUID(),
         color,
         type: "pouch",
-      })
+      }),
     );
 
     const tokensById = pouch.reduce<PrivateGameState["tokensById"]>(
@@ -90,7 +89,7 @@ export default class Server implements Party.Server {
         acc[token.id] = token;
         return acc;
       },
-      {}
+      {},
     );
     this.privateGameState = {
       tokensById,
@@ -99,22 +98,24 @@ export default class Server implements Party.Server {
     this.history = [];
   }
 
-  onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
+  onConnect(conn: StatefulPartyConnection, ctx: Party.ConnectionContext) {
     // A websocket just connected!
     console.log(
       `Connected:
     id: ${conn.id}
     room: ${this.room.id}
-    url: ${new URL(ctx.request.url).pathname}`
+    url: ${new URL(ctx.request.url).pathname}`,
     );
 
     const userJson = JSON.parse(
-      new URL(ctx.request.url).searchParams.get("user") || ""
+      new URL(ctx.request.url).searchParams.get("user") || "",
     );
     const user = userSchema.parse(userJson);
 
+    conn.setState({ userId: user.id });
+
     const alreadyAdded = this.publicGameState.playerList.some(
-      (player) => player.id === user.id
+      (player) => player.id === user.id,
     );
 
     if (!alreadyAdded) {
@@ -128,16 +129,21 @@ export default class Server implements Party.Server {
     this.room.broadcast(JSON.stringify(this.publicGameState));
   }
 
-  onMessage(message: string, sender: Party.Connection) {
+  onMessage(message: string, sender: StatefulPartyConnection) {
     try {
       const action = actionSchema.parse(JSON.parse(message));
+      const userId = sender.state?.userId;
+      const isPlayerTurn = userId === this.publicGameState.currentPlayerId;
 
       switch (action.type) {
-        // case "addPlayer":
-        //   this.addPlayer(action.payload);
-        //   break;
         case "startGame":
           this.startGame();
+          break;
+        case "takeTokens":
+          if (!isPlayerTurn) {
+            throw new Error("Not your turn");
+          }
+          this.takeTokens(action.payload);
           break;
       }
     } catch (error) {
@@ -150,7 +156,7 @@ export default class Server implements Party.Server {
     this.room.broadcast(
       `${sender.id}: ${message}`,
       // ...except for the connection it came from
-      [sender.id]
+      [sender.id],
     );
   }
 
@@ -161,7 +167,7 @@ export default class Server implements Party.Server {
 
     // Select a random player to start the game
     const randomIndex = Math.floor(
-      Math.random() * this.publicGameState.playerList.length
+      Math.random() * this.publicGameState.playerList.length,
     );
     this.publicGameState.currentPlayerId =
       this.publicGameState.playerList[randomIndex].id;
@@ -172,7 +178,7 @@ export default class Server implements Party.Server {
         acc[player.id] = {};
         return acc;
       },
-      {}
+      {},
     );
 
     for (let i = 0; i < 5; i++) {
@@ -190,6 +196,15 @@ export default class Server implements Party.Server {
 
     // Broadcast game start
     this.allocateAndBroadcast();
+  }
+
+  takeTokens(zone: number) {
+    for (const key in this.privateGameState.tokensById) {
+      const token = this.privateGameState.tokensById[key];
+      if (token.type === "centralBoard" && token.position.zone === zone) {
+        // TODO
+      }
+    }
   }
 
   allocateTokens() {
@@ -221,7 +236,7 @@ export default class Server implements Party.Server {
         case "playerBoard":
           player[token.position.player].board[
             token.position.place.coords
-          ].tokens[token.position.place.position] = token;
+          ].tokens[token.position.place.stackPostion] = token;
           break;
         default:
           token satisfies never;

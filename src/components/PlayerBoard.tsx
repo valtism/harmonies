@@ -3,14 +3,14 @@ import { defineHex, Grid, Orientation } from "honeycomb-grid";
 import PartySocket from "partysocket";
 import BoardSideA from "src/assets/boardSideA.webp";
 import { User } from "src/routes/$roomId";
-import { Color, PublicGameState, PublicToken } from "src/shared";
+import { Color, PublicGameState, Token } from "src/shared";
 
 const width = 726;
 
 interface PlayerBoardProps {
   gameState: PublicGameState;
   user: User;
-  token: PublicToken | null;
+  token: Token | null;
   socket: PartySocket;
 }
 export function PlayerBoard({
@@ -33,7 +33,7 @@ export function PlayerBoard({
       <div className="absolute rotate-[0.5deg] inset-0">
         {Array.from(grid).map((hexes) => {
           const key = `${hexes.q}-${hexes.r}`;
-          const tile = gameState.players[user.id]?.[key];
+          const tile = gameState.players[user.id]?.board?.[key];
           const tokens = tile?.tokens || [];
           const topToken = tokens.at(-1);
           const tokenPlacable = canPlaceToken(token, tokens);
@@ -65,7 +65,8 @@ export function PlayerBoard({
               }}
               className={clsx(
                 "absolute size-10 hover:bg-black/50! hexagon p-4 text-[8px] select-none",
-                tokenPlacable && "ring-4 ring-green-500 shadow-2xl bg-white/50!"
+                tokenPlacable &&
+                  "ring-4 ring-green-500 shadow-2xl bg-white/50!",
               )}
             >
               {JSON.stringify(tile, null, 2)}
@@ -77,7 +78,7 @@ export function PlayerBoard({
   );
 }
 
-function canPlaceToken(token: PublicToken | null, stack: PublicToken[]) {
+function canPlaceToken(token: Token | null, stack: Token[]) {
   if (!token) return false;
   const topToken = stack.at(-1);
 

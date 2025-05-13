@@ -30,7 +30,7 @@ const centralBoardStyles: CSSProperties[] = [
 
 interface CentralBoardProps {
   state: PublicGameState["centralBoard"];
-  onClick: () => void;
+  onClick: (zone: number) => void;
 }
 export function CentralBoard({ state, onClick }: CentralBoardProps) {
   const width = 450;
@@ -47,7 +47,7 @@ export function CentralBoard({ state, onClick }: CentralBoardProps) {
             tokens={tokens}
             style={style}
             onClick={() => {
-              console.log(tokens, index);
+              onClick(index);
             }}
           />
         );
@@ -64,14 +64,14 @@ const tokenStyles: CSSProperties[] = [
 
 interface BoardZoneProps {
   tokens: PublicGameState["centralBoard"][number];
-  onClick: (tokens: PublicGameState["centralBoard"][number]) => void;
+  onClick: () => void;
   style?: CSSProperties;
 }
 function BoardZone({ tokens, onClick, style }: BoardZoneProps) {
   return (
     <button
       className="absolute flex items-center justify-center hover:bg-black/30"
-      onClick={() => onClick(tokens)}
+      onClick={onClick}
       style={{
         width: "20%",
         aspectRatio: "1/1",
