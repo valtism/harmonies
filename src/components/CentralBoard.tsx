@@ -1,24 +1,7 @@
-import {
-  CSSProperties,
-  unstable_ViewTransition as ViewTransition,
-} from "react";
+import { CSSProperties } from "react";
 import CentralBoardImg from "src/assets/centralBoard.webp";
-import TokenBlue from "src/assets/tokenBlue.webp";
-import TokenBrown from "src/assets/tokenBrown.webp";
-import TokenGray from "src/assets/tokenGray.webp";
-import TokenGreen from "src/assets/tokenGreen.webp";
-import TokenRed from "src/assets/tokenRed.webp";
-import TokenYellow from "src/assets/tokenYellow.webp";
+import { Token } from "src/components/Token";
 import { PublicGameState } from "src/shared";
-
-const tokenImage = {
-  blue: TokenBlue,
-  brown: TokenBrown,
-  gray: TokenGray,
-  green: TokenGreen,
-  red: TokenRed,
-  yellow: TokenYellow,
-};
 
 const centralBoardStyles: CSSProperties[] = [
   { top: "11%", left: "20%" },
@@ -81,16 +64,7 @@ function BoardZone({ tokens, onClick, style }: BoardZoneProps) {
       {tokens.map((token, index) => {
         if (!token) return null;
         const style = tokenStyles[index];
-        return (
-          <ViewTransition key={token.id} name={token.id}>
-            <img
-              src={tokenImage[token.color]}
-              alt={`${token} token`}
-              width="50%"
-              style={style}
-            />
-          </ViewTransition>
-        );
+        return <Token key={token.id} token={token} width="50%" style={style} />;
       })}
     </button>
   );

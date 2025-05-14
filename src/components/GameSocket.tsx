@@ -1,5 +1,5 @@
 import usePartySocket from "partysocket/react";
-import { useState } from "react";
+import { startTransition, useState } from "react";
 import { PublicGameState, User } from "src/shared";
 import { Game } from "./Game";
 
@@ -21,7 +21,7 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
     }),
     onMessage(evt) {
       const gameState = JSON.parse(evt.data) as PublicGameState;
-      setGameState(gameState);
+      startTransition(() => setGameState(gameState));
     },
   });
 

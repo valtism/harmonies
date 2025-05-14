@@ -121,7 +121,7 @@ interface BaseToken {
   color: "blue" | "gray" | "brown" | "green" | "yellow" | "red";
 }
 
-export type Token =
+export type TokenType =
   | (BaseToken & {
       type: "pouch";
     })
@@ -150,11 +150,11 @@ export interface PublicGameState {
   currentPlayerId: string | null;
   boardType: "A" | "B";
   centralBoard: [
-    [Token | null, Token | null, Token | null],
-    [Token | null, Token | null, Token | null],
-    [Token | null, Token | null, Token | null],
-    [Token | null, Token | null, Token | null],
-    [Token | null, Token | null, Token | null],
+    [TokenType | null, TokenType | null, TokenType | null],
+    [TokenType | null, TokenType | null, TokenType | null],
+    [TokenType | null, TokenType | null, TokenType | null],
+    [TokenType | null, TokenType | null, TokenType | null],
+    [TokenType | null, TokenType | null, TokenType | null],
   ];
   players: Record<
     string,
@@ -162,18 +162,18 @@ export interface PublicGameState {
       board: Record<
         string,
         {
-          tokens: Token[];
+          tokens: TokenType[];
           cube: "animal" | "spirit" | null;
         }
       >;
-      takenTokens: [Token | null, Token | null, Token | null];
+      takenTokens: [TokenType | null, TokenType | null, TokenType | null];
     }
   >;
 }
 
 export interface PrivateGameState {
-  tokensById: Record<string, Token>;
-  pouch: Token[];
+  tokensById: Record<string, TokenType>;
+  pouch: TokenType[];
 }
 
 // export type PublicGameState = z.infer<typeof publicGameStateSchema>;

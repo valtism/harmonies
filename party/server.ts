@@ -4,6 +4,7 @@ import {
   Color,
   PrivateGameState,
   PublicGameState,
+  TokenType,
   // TileCoordinate,
   actionSchema,
   userSchema,
@@ -140,10 +141,10 @@ export default class Server implements Party.Server {
           this.startGame();
           break;
         case "takeTokens":
-          if (!isPlayerTurn) {
-            throw new Error("Not your turn");
-          }
-          this.takeTokens(action.payload);
+          // if (!isPlayerTurn) {
+          //   throw new Error("Not your turn");
+          // }
+          this.takeTokens(action.payload, userId);
           break;
       }
     } catch (error) {
@@ -161,9 +162,9 @@ export default class Server implements Party.Server {
   }
 
   startGame() {
-    if (this.publicGameState.playerList.length < 2) {
-      throw new Error("Need at least 2 players to start");
-    }
+    // if (this.publicGameState.playerList.length < 2) {
+    //   throw new Error("Need at least 2 players to start");
+    // }
 
     // Select a random player to start the game
     const randomIndex = Math.floor(
@@ -172,39 +173,61 @@ export default class Server implements Party.Server {
     this.publicGameState.currentPlayerId =
       this.publicGameState.playerList[randomIndex].id;
 
-    // Initialize empty player boards
-    this.publicGameState.players = this.publicGameState.playerList.reduce(
-      (acc, player) => {
-        acc[player.id] = {};
-        return acc;
-      },
-      {},
-    );
+    this.privateGameState.tokensById = shuffle([...allTokens]).reduce<
+      PrivateGameState["tokensById"]
+    >((tokensById, color) => {
+      const token: TokenType = {
+        id: crypto.randomUUID(),
+        color,
+        type: "pouch",
+      };
+      tokensById[token.id] = token;
+      return tokensById;
+    }, {});
 
-    for (let i = 0; i < 5; i++) {
-      for (let j = 0; j < 3; j++) {
-        const token = this.privateGameState.pouch.pop()!;
-        token.type = "centralBoard";
-        // Make typescript happy
-        if (token.type !== "centralBoard") return;
-        token.position = {
-          zone: i,
-          place: j,
-        };
-      }
+    let i = 0;
+    for (const key in this.privateGameState.tokensById) {
+      if (i >= 15) continue;
+      const zone = Math.floor(i / 3);
+      const place = i % 3;
+      const token = this.privateGameState.tokensById[key];
+      token.type = "centralBoard";
+      if (token.type !== "centralBoard") return; //make TS happy
+      token.position = { zone, place };
+      i++;
     }
+
+    // Initialize empty player boards
+    this.publicGameState.players = this.publicGameState.playerList.reduce<
+      PublicGameState["players"]
+    >((acc, player) => {
+      acc[player.id] = {
+        board: {},
+        takenTokens: [null, null, null],
+      };
+      return acc;
+    }, {});
 
     // Broadcast game start
     this.allocateAndBroadcast();
   }
 
-  takeTokens(zone: number) {
+  takeTokens(zone: number, userId: string) {
+    let place = 0;
     for (const key in this.privateGameState.tokensById) {
       const token = this.privateGameState.tokensById[key];
       if (token.type === "centralBoard" && token.position.zone === zone) {
-        // TODO
+        const newToken: TokenType = {
+          id: token.id,
+          color: token.color,
+          type: "taken",
+          position: { player: userId, place: place },
+        };
+        this.privateGameState.tokensById[key] = newToken;
+        place++;
       }
     }
+    this.allocateAndBroadcast();
   }
 
   allocateTokens() {
@@ -216,7 +239,15 @@ export default class Server implements Party.Server {
       [null, null, null],
       [null, null, null],
     ];
-    const player: PublicGameState["players"] = {};
+    const players = this.publicGameState.playerList.reduce<
+      PublicGameState["players"]
+    >((players, player) => {
+      players[player.id] = {
+        board: {},
+        takenTokens: [null, null, null],
+      };
+      return players;
+    }, {});
 
     // Iterate over the tokens and distribute them
     for (const key in this.privateGameState.tokensById) {
@@ -226,15 +257,14 @@ export default class Server implements Party.Server {
           pouchTokens.push(token);
           break;
         case "centralBoard":
-          centralBoardTokens[token.position.zone]![token.position.place] =
-            token;
+          centralBoardTokens[token.position.zone][token.position.place] = token;
           break;
         case "taken":
-          player[token.position.player].takenTokens[token.position.place] =
+          players[token.position.player].takenTokens[token.position.place] =
             token;
           break;
         case "playerBoard":
-          player[token.position.player].board[
+          players[token.position.player].board[
             token.position.place.coords
           ].tokens[token.position.place.stackPostion] = token;
           break;
@@ -245,7 +275,7 @@ export default class Server implements Party.Server {
 
     this.privateGameState.pouch = pouchTokens;
     this.publicGameState.centralBoard = centralBoardTokens;
-    this.publicGameState.players = player;
+    this.publicGameState.players = players;
   }
 
   allocateAndBroadcast() {

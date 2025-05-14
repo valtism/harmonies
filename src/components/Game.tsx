@@ -3,7 +3,7 @@ import { useState } from "react";
 import { CentralBoard } from "src/components/CentralBoard";
 import { PlayerBoard } from "src/components/PlayerBoard";
 import { User } from "src/routes/$roomId";
-import { ActionType, PublicGameState, Token } from "src/shared";
+import { ActionType, PublicGameState, TokenType } from "src/shared";
 
 interface GameProps {
   gameState: PublicGameState;
@@ -18,14 +18,27 @@ export function Game({ gameState, socket, user }: GameProps) {
     socket.send(JSON.stringify(action));
   }
 
-  const [token, setToken] = useState<Token | null>(null);
+  const [token, setToken] = useState<TokenType | null>(null);
 
   return (
-    <div className="mb-60">
+    <div className="mb-60 flex flex-col items-start">
+      <button
+        className="bg-stone-100 hover:bg-stone-300 text-stone-900 px-2 py-1 rounded"
+        onClick={() => {
+          sendAction({
+            type: "startGame",
+          });
+        }}
+      >
+        Start Game
+      </button>
       <CentralBoard
         state={gameState.centralBoard}
         onClick={(zone) => {
-          console.log(zone);
+          sendAction({
+            type: "takeTokens",
+            payload: zone,
+          });
         }}
       />
       <div></div>
@@ -42,16 +55,6 @@ export function Game({ gameState, socket, user }: GameProps) {
           <div key={player.id}>{player.name}</div>
         ))}
       </div>
-      <button
-        className="bg-stone-100 hover:bg-stone-300 text-stone-900 px-2 py-1 rounded"
-        onClick={() => {
-          sendAction({
-            type: "startGame",
-          });
-        }}
-      >
-        Start Game
-      </button>
     </div>
   );
 }

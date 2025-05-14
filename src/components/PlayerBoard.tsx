@@ -2,8 +2,9 @@ import clsx from "clsx";
 import { defineHex, Grid, Orientation } from "honeycomb-grid";
 import PartySocket from "partysocket";
 import BoardSideA from "src/assets/boardSideA.webp";
+import { Token } from "src/components/Token";
 import { User } from "src/routes/$roomId";
-import { Color, PublicGameState, Token } from "src/shared";
+import { Color, PublicGameState } from "src/shared";
 
 const width = 726;
 
@@ -30,6 +31,20 @@ export function PlayerBoard({
   return (
     <div className="relative inline-block">
       <img src={BoardSideA} alt="player board" width={width} />
+      <div
+        className="absolute bg-black/20 flex flex-col gap-2"
+        style={{
+          width: "10%",
+          height: "30%",
+          left: "84%",
+          top: "10%",
+        }}
+      >
+        {gameState.players[user.id]?.takenTokens.map((token) => {
+          if (!token) return;
+          return <Token key={token.id} token={token} />;
+        })}
+      </div>
       <div className="absolute rotate-[0.5deg] inset-0">
         {Array.from(grid).map((hexes) => {
           const key = `${hexes.q}-${hexes.r}`;
