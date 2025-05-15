@@ -5,7 +5,7 @@ import TokenGray from "src/assets/tokenGray.webp";
 import TokenGreen from "src/assets/tokenGreen.webp";
 import TokenRed from "src/assets/tokenRed.webp";
 import TokenYellow from "src/assets/tokenYellow.webp";
-import { TokenType as TokenType } from "src/shared";
+import { TokenType } from "src/shared";
 
 const tokenImage = {
   blue: TokenBlue,

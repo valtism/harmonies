@@ -134,6 +134,10 @@ export type TokenType =
       position: { player: string; place: number };
     })
   | (BaseToken & {
+      type: "placing";
+      position: { player: string };
+    })
+  | (BaseToken & {
       type: "playerBoard";
       position: {
         player: string;
@@ -167,6 +171,7 @@ export interface PublicGameState {
         }
       >;
       takenTokens: [TokenType | null, TokenType | null, TokenType | null];
+      placing: TokenType | null;
     }
   >;
 }
@@ -199,10 +204,18 @@ const takeTokensSchema = z.object({
   payload: z.number(),
 });
 
+const grabTokenSchema = z.object({
+  type: z.literal("grabToken"),
+  payload: z.object({
+    takenIndex: z.number(),
+  }),
+});
+
 export const actionSchema = z.union([
   startGameActionSchema,
   // addPlayerActionSchema,
   takeTokensSchema,
+  grabTokenSchema,
 ]);
 
 export type ActionType = z.infer<typeof actionSchema>;

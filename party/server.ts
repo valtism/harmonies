@@ -134,6 +134,7 @@ export default class Server implements Party.Server {
     try {
       const action = actionSchema.parse(JSON.parse(message));
       const userId = sender.state?.userId;
+      if (!userId) throw new Error("Missing userId");
       const isPlayerTurn = userId === this.publicGameState.currentPlayerId;
 
       switch (action.type) {
@@ -146,6 +147,8 @@ export default class Server implements Party.Server {
           // }
           this.takeTokens(action.payload, userId);
           break;
+        case "grabToken":
+          this.grabFromTaken(userId, action.payload.takenIndex);
       }
     } catch (error) {
       console.error("Invalid message format:", error);
@@ -154,11 +157,11 @@ export default class Server implements Party.Server {
     // let's log the message
     console.log(`connection ${sender.id} sent message: ${message}`);
     // as well as broadcast it to all the other connections in the room...
-    this.room.broadcast(
-      `${sender.id}: ${message}`,
-      // ...except for the connection it came from
-      [sender.id],
-    );
+    // this.room.broadcast(
+    //   `${sender.id}: ${message}`,
+    //   // ...except for the connection it came from
+    //   [sender.id],
+    // );
   }
 
   startGame() {
@@ -177,7 +180,7 @@ export default class Server implements Party.Server {
       PrivateGameState["tokensById"]
     >((tokensById, color) => {
       const token: TokenType = {
-        id: crypto.randomUUID(),
+        id: `token-${crypto.randomUUID()}`,
         color,
         type: "pouch",
       };
@@ -204,6 +207,7 @@ export default class Server implements Party.Server {
       acc[player.id] = {
         board: {},
         takenTokens: [null, null, null],
+        placing: null,
       };
       return acc;
     }, {});
@@ -230,6 +234,26 @@ export default class Server implements Party.Server {
     this.allocateAndBroadcast();
   }
 
+  grabFromTaken(playerId: string, index: number) {
+    for (const key in this.privateGameState.tokensById) {
+      const token = this.privateGameState.tokensById[key];
+      if (
+        token.type === "taken" &&
+        token.position.player === playerId &&
+        token.position.place === index
+      ) {
+        const newToken: TokenType = {
+          id: token.id,
+          color: token.color,
+          type: "placing",
+          position: { player: playerId },
+        };
+        this.privateGameState.tokensById[key] = newToken;
+      }
+    }
+    this.allocateAndBroadcast();
+  }
+
   allocateTokens() {
     const pouchTokens: PrivateGameState["pouch"] = [];
     const centralBoardTokens: PublicGameState["centralBoard"] = [
@@ -245,6 +269,7 @@ export default class Server implements Party.Server {
       players[player.id] = {
         board: {},
         takenTokens: [null, null, null],
+        placing: null,
       };
       return players;
     }, {});
@@ -262,6 +287,9 @@ export default class Server implements Party.Server {
         case "taken":
           players[token.position.player].takenTokens[token.position.place] =
             token;
+          break;
+        case "placing":
+          players[token.position.player].placing = token;
           break;
         case "playerBoard":
           players[token.position.player].board[

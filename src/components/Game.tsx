@@ -1,14 +1,13 @@
 import PartySocket from "partysocket";
-import { useState } from "react";
 import { CentralBoard } from "src/components/CentralBoard";
+import { PlacingToken } from "src/components/PlacingToken";
 import { PlayerBoard } from "src/components/PlayerBoard";
 import { User } from "src/routes/$roomId";
-import { ActionType, PublicGameState, TokenType } from "src/shared";
+import { ActionType, PublicGameState } from "src/shared";
 
 interface GameProps {
   gameState: PublicGameState;
   socket: PartySocket;
-  // roomId: string;
   user: User;
 }
 export function Game({ gameState, socket, user }: GameProps) {
@@ -17,8 +16,6 @@ export function Game({ gameState, socket, user }: GameProps) {
   function sendAction(action: ActionType) {
     socket.send(JSON.stringify(action));
   }
-
-  const [token, setToken] = useState<TokenType | null>(null);
 
   return (
     <div className="mb-60 flex flex-col items-start">
@@ -42,12 +39,7 @@ export function Game({ gameState, socket, user }: GameProps) {
         }}
       />
       <div></div>
-      <PlayerBoard
-        gameState={gameState}
-        socket={socket}
-        token={token}
-        user={user}
-      />
+      <PlayerBoard gameState={gameState} sendAction={sendAction} user={user} />
 
       <div className="text-white">
         <div className="font-bold">Players:</div>
@@ -55,6 +47,8 @@ export function Game({ gameState, socket, user }: GameProps) {
           <div key={player.id}>{player.name}</div>
         ))}
       </div>
+
+      <PlacingToken token={gameState.players[user.id]!.placing} />
     </div>
   );
 }
