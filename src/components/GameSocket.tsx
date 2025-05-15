@@ -1,6 +1,6 @@
 import usePartySocket from "partysocket/react";
 import { startTransition, useState } from "react";
-import { PublicGameState, User } from "src/shared";
+import { PersonalPublicGameState, PublicGameState, User } from "src/shared";
 import { Game } from "./Game";
 
 interface GameSocketProps {
@@ -8,7 +8,9 @@ interface GameSocketProps {
   user: User;
 }
 export function GameSocket({ roomId, user }: GameSocketProps) {
-  const [gameState, setGameState] = useState<PublicGameState | null>(null);
+  const [gameState, setGameState] = useState<PersonalPublicGameState | null>(
+    null,
+  );
 
   const socket = usePartySocket({
     // host defaults to the current URL if not set
@@ -21,7 +23,9 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
     }),
     onMessage(evt) {
       const gameState = JSON.parse(evt.data) as PublicGameState;
-      startTransition(() => setGameState(gameState));
+      const thisPlayer = gameState.players[user.id];
+      if (!thisPlayer) throw new Error("Player data not found");
+      startTransition(() => setGameState({ ...gameState, player: thisPlayer }));
     },
   });
 

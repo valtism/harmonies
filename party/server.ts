@@ -5,8 +5,8 @@ import {
   PrivateGameState,
   PublicGameState,
   TokenType,
-  // TileCoordinate,
   actionSchema,
+  canPlaceToken,
   userSchema,
 } from "../src/shared";
 
@@ -124,6 +124,7 @@ export default class Server implements Party.Server {
       this.publicGameState.players[user.id] = {
         board: {},
         takenTokens: [null, null, null],
+        placing: null,
       };
     }
 
@@ -135,7 +136,7 @@ export default class Server implements Party.Server {
       const action = actionSchema.parse(JSON.parse(message));
       const userId = sender.state?.userId;
       if (!userId) throw new Error("Missing userId");
-      const isPlayerTurn = userId === this.publicGameState.currentPlayerId;
+      // const isPlayerTurn = userId === this.publicGameState.currentPlayerId;
 
       switch (action.type) {
         case "startGame":
@@ -145,10 +146,16 @@ export default class Server implements Party.Server {
           // if (!isPlayerTurn) {
           //   throw new Error("Not your turn");
           // }
-          this.takeTokens(action.payload, userId);
+          this.takeTokens(userId, action.payload);
           break;
         case "grabToken":
           this.grabFromTaken(userId, action.payload.takenIndex);
+          break;
+        case "placeToken":
+          this.placeToken(userId, action.payload.coords);
+          break;
+        default:
+          action satisfies never;
       }
     } catch (error) {
       console.error("Invalid message format:", error);
@@ -216,7 +223,7 @@ export default class Server implements Party.Server {
     this.allocateAndBroadcast();
   }
 
-  takeTokens(zone: number, userId: string) {
+  takeTokens(userId: string, zone: number) {
     let place = 0;
     for (const key in this.privateGameState.tokensById) {
       const token = this.privateGameState.tokensById[key];
@@ -254,6 +261,41 @@ export default class Server implements Party.Server {
     this.allocateAndBroadcast();
   }
 
+  placeToken(playerId: string, coords: string) {
+    const placingToken = this.publicGameState.players[playerId].placing;
+    if (!placingToken) throw new Error("No token found");
+
+    const stack: TokenType[] = [];
+    for (const key in this.privateGameState.tokensById) {
+      const token = this.privateGameState.tokensById[key];
+      if (token.type === "playerBoard") console.log(token);
+      if (
+        token.type === "playerBoard" &&
+        token.position.player === playerId &&
+        token.position.place.coords === coords
+      ) {
+        stack[token.position.place.stackPostion] = token;
+      }
+    }
+
+    const canPlace = canPlaceToken(placingToken, stack);
+    if (!canPlace) throw new Error("Cannot place token");
+    const newToken: TokenType = {
+      ...placingToken,
+      type: "playerBoard",
+      position: {
+        player: playerId,
+        place: {
+          coords: coords,
+          stackPostion: stack.length,
+        },
+      },
+    };
+    this.privateGameState.tokensById[placingToken.id] = newToken;
+
+    this.allocateAndBroadcast();
+  }
+
   allocateTokens() {
     const pouchTokens: PrivateGameState["pouch"] = [];
     const centralBoardTokens: PublicGameState["centralBoard"] = [
@@ -267,7 +309,16 @@ export default class Server implements Party.Server {
       PublicGameState["players"]
     >((players, player) => {
       players[player.id] = {
-        board: {},
+        board: this.publicGameState.grid.reduce<
+          PublicGameState["players"][string]["board"]
+        >((board, [q, r]) => {
+          const key = `(${q},${r})`;
+          board[key] = {
+            cube: null,
+            tokens: [],
+          };
+          return board;
+        }, {}),
         takenTokens: [null, null, null],
         placing: null,
       };

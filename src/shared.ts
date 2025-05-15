@@ -145,6 +145,11 @@ export type TokenType =
       };
     });
 
+export interface PrivateGameState {
+  tokensById: Record<string, TokenType>;
+  pouch: TokenType[];
+}
+
 export interface PublicGameState {
   grid: [number, number][];
   playerList: {
@@ -176,9 +181,8 @@ export interface PublicGameState {
   >;
 }
 
-export interface PrivateGameState {
-  tokensById: Record<string, TokenType>;
-  pouch: TokenType[];
+export interface PersonalPublicGameState extends PublicGameState {
+  player: PublicGameState["players"][string];
 }
 
 // export type PublicGameState = z.infer<typeof publicGameStateSchema>;
@@ -190,14 +194,58 @@ export interface PrivateGameState {
 
 // export type PrivateGameState = z.infer<typeof privateGameStateSchema>;
 
+export function canPlaceToken(token: TokenType | null, stack: TokenType[]) {
+  if (!token) return false;
+  const topToken = stack.at(-1);
+
+  if (!topToken) {
+    return true;
+  }
+
+  if (stack.length === 1) {
+    switch (token.color) {
+      case Color.Blue:
+      case Color.Yellow:
+        return false;
+      case Color.Gray:
+        return topToken.color === Color.Gray;
+      case Color.Brown:
+        return topToken.color === Color.Brown;
+      case Color.Green:
+        return topToken.color === Color.Brown;
+      case Color.Red:
+        return [Color.Gray, Color.Brown, Color.Red].includes(topToken.color);
+      default:
+        token.color satisfies never;
+        return false;
+    }
+  }
+
+  if (stack.length === 2) {
+    switch (token.color) {
+      case Color.Blue:
+      case Color.Yellow:
+      case Color.Brown:
+      case Color.Red:
+        return false;
+      case Color.Gray:
+        return topToken.color === Color.Gray;
+      case Color.Green:
+        return topToken.color === Color.Brown;
+      default:
+        token.color satisfies never;
+        return false;
+    }
+  }
+
+  if (stack.length > 2) {
+    return false;
+  }
+}
+
 const startGameActionSchema = z.object({
   type: z.literal("startGame"),
 });
-
-// const addPlayerActionSchema = z.object({
-//   type: z.literal("addPlayer"),
-//   payload: z.string(),
-// });
 
 const takeTokensSchema = z.object({
   type: z.literal("takeTokens"),
@@ -211,11 +259,19 @@ const grabTokenSchema = z.object({
   }),
 });
 
+const placeTokenSchema = z.object({
+  type: z.literal("placeToken"),
+  payload: z.object({
+    coords: z.string(),
+  }),
+});
+
 export const actionSchema = z.union([
   startGameActionSchema,
   // addPlayerActionSchema,
   takeTokensSchema,
   grabTokenSchema,
+  placeTokenSchema,
 ]);
 
 export type ActionType = z.infer<typeof actionSchema>;
