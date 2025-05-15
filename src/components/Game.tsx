@@ -20,7 +20,7 @@ export function Game({ gameState, socket, user }: GameProps) {
   return (
     <div className="mb-60 flex flex-col items-start">
       <button
-        className="bg-stone-100 hover:bg-stone-300 text-stone-900 px-2 py-1 rounded"
+        className="rounded bg-stone-100 px-2 py-1 text-stone-900 hover:bg-stone-300"
         onClick={() => {
           sendAction({
             type: "startGame",

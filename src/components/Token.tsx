@@ -22,7 +22,11 @@ interface TokenProps extends React.ComponentProps<"img"> {
 export function Token({ token, ...props }: TokenProps) {
   return (
     <ViewTransition name={token.id}>
-      <img alt={`${token} token`} {...props} src={tokenImage[token.color]} />
+      <img
+        alt={`${token.color} token`}
+        {...props}
+        src={tokenImage[token.color]}
+      />
     </ViewTransition>
   );
 }
