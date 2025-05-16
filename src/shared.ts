@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-const colorSchema = z.enum(["blue", "gray", "brown", "green", "yellow", "red"]);
-export type ColorType = z.infer<typeof colorSchema>;
 export const Color = {
   Blue: "blue",
   Gray: "gray",
@@ -10,70 +8,7 @@ export const Color = {
   Yellow: "yellow",
   Red: "red",
 } as const;
-
-// const tileCoordinateSchema = z.tuple([z.number(), z.number()]);
-// export type TileCoordinate = z.infer<typeof tileCoordinateSchema>;
-
-// export const publicTokenSchema = z.object({
-//   id: z.string().uuid(),
-//   color: colorSchema,
-// });
-// export type PublicToken = z.infer<typeof publicTokenSchema>;
-
-// const centralBoardPositionSchema = z.object({
-//   zone: z.number(),
-//   place: z.number(),
-// });
-// const takenPositionSchema = z.object({
-//   player: z.string(),
-//   place: z.number(),
-// });
-// const playerBoardPositionSchema = z.object({
-//   player: z.string(),
-//   place: z.object({
-//     coords: z.string(),
-//     position: z.number(),
-//   }),
-// });
-// const privateTokenSchema = z.discriminatedUnion("type", [
-//   z
-//     .object({
-//       type: z.literal("pouch"),
-//     })
-//     .merge(publicTokenSchema),
-//   z
-//     .object({
-//       type: z.literal("centralBoard"),
-//       position: centralBoardPositionSchema,
-//     })
-//     .merge(publicTokenSchema),
-//   z
-//     .object({
-//       type: z.literal("taken"),
-//       position: takenPositionSchema,
-//     })
-//     .merge(publicTokenSchema),
-//   z
-//     .object({
-//       type: z.literal("playerBoard"),
-//       position: playerBoardPositionSchema,
-//     })
-//     .merge(publicTokenSchema),
-// ]);
-// export type PrivateToken = z.infer<typeof privateTokenSchema>;
-
-// const cubeSchema = z.enum(["animal", "spirit"]);
-// export type CubeType = z.infer<typeof cubeSchema>;
-// export const Cube = {
-//   Animal: "animal",
-//   Spirit: "spirit",
-// } as const;
-
-// const tileSchema = z.object({
-//   tokens: publicTokenSchema.array(),
-//   cube: cubeSchema.nullable(),
-// });
-// export type Tile = z.infer<typeof tileSchema>;
+export type ColorType = (typeof Color)[keyof typeof Color];
 
 export const userSchema = z.object({
   id: z.string(),
@@ -81,46 +16,10 @@ export const userSchema = z.object({
 });
 export type User = z.infer<typeof userSchema>;
 
-// const centralBoardZoneSchema = z.tuple([
-//   publicTokenSchema.nullable(),
-//   publicTokenSchema.nullable(),
-//   publicTokenSchema.nullable(),
-// ]);
-// const centralBoardSchema = z.tuple([
-//   centralBoardZoneSchema,
-//   centralBoardZoneSchema,
-//   centralBoardZoneSchema,
-//   centralBoardZoneSchema,
-//   centralBoardZoneSchema,
-// ]);
-
-// export type CentralBoard = z.infer<typeof centralBoardSchema>;
-
-// const playerBoardSchema = z.record(z.string(), tileSchema);
-
-// const playerSchema = z.object({
-//   board: playerBoardSchema,
-//   takenTokens: z.tuple([
-//     publicTokenSchema.nullable(),
-//     publicTokenSchema.nullable(),
-//     publicTokenSchema.nullable(),
-//   ]),
-// });
-
-// export const publicGameStateSchema = z.object({
-//   grid: z.array(tileCoordinateSchema),
-//   playerList: z.array(userSchema),
-//   currentPlayerId: z.string().nullable(),
-//   boardType: z.enum(["A", "B"]),
-//   centralBoard: centralBoardSchema,
-//   players: z.record(z.string(), playerSchema),
-// });
-
-interface BaseToken {
+type BaseToken = {
   id: string;
   color: "blue" | "gray" | "brown" | "green" | "yellow" | "red";
-}
-
+};
 export type TokenType =
   | (BaseToken & {
       type: "pouch";
@@ -143,17 +42,24 @@ export type TokenType =
 
 export interface PrivateGameState {
   tokensById: Record<string, TokenType>;
-  pouch: TokenType[];
+  boardType: "A" | "B";
+  playerIdList: string[];
+  currentPlayerId: string | null;
 }
 
-export interface PublicGameState {
+interface PlayerState {
+  board: Record<
+    string,
+    {
+      tokens: TokenType[];
+      cube: "animal" | "spirit" | null;
+    }
+  >;
+  takenTokens: [TokenType | null, TokenType | null, TokenType | null];
+}
+
+export interface DerivedPublicGameState {
   grid: [number, number][];
-  playerList: {
-    id: string;
-    name: string;
-  }[];
-  currentPlayerId: string | null;
-  boardType: "A" | "B";
   centralBoard: [
     [TokenType | null, TokenType | null, TokenType | null],
     [TokenType | null, TokenType | null, TokenType | null],
@@ -161,33 +67,9 @@ export interface PublicGameState {
     [TokenType | null, TokenType | null, TokenType | null],
     [TokenType | null, TokenType | null, TokenType | null],
   ];
-  players: Record<
-    string,
-    {
-      board: Record<
-        string,
-        {
-          tokens: TokenType[];
-          cube: "animal" | "spirit" | null;
-        }
-      >;
-      takenTokens: [TokenType | null, TokenType | null, TokenType | null];
-    }
-  >;
+  players: Record<string, PlayerState>;
+  player: PlayerState;
 }
-
-export interface PersonalPublicGameState extends PublicGameState {
-  player: PublicGameState["players"][string];
-}
-
-// export type PublicGameState = z.infer<typeof publicGameStateSchema>;
-
-// export const privateGameStateSchema = z.object({
-//   tokensById: z.record(z.string(), privateTokenSchema),
-//   pouch: z.array(privateTokenSchema),
-// });
-
-// export type PrivateGameState = z.infer<typeof privateGameStateSchema>;
 
 export function canPlaceToken(
   token: TokenType | null,
@@ -248,7 +130,6 @@ const takeTokensSchema = z.object({
   payload: z.number(),
 });
 
-
 const placeTokenSchema = z.object({
   type: z.literal("placeToken"),
   payload: z.object({
@@ -259,9 +140,26 @@ const placeTokenSchema = z.object({
 
 export const actionSchema = z.union([
   startGameActionSchema,
-  // addPlayerActionSchema,
   takeTokensSchema,
   placeTokenSchema,
 ]);
 
 export type ActionType = z.infer<typeof actionSchema>;
+
+export interface History {
+  action: ActionType;
+  privateGameState: PrivateGameState;
+  publicGameStat: DerivedPublicGameState;
+}
+
+export type PlayersById = Record<string, User>;
+
+export type Broadcast =
+  | {
+      type: "players";
+      players: PlayersById;
+    }
+  | {
+      type: "gameState";
+      gameState: DerivedPublicGameState;
+    };

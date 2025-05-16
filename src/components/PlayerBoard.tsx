@@ -7,14 +7,14 @@ import { Token } from "src/components/Token";
 import {
   ActionType,
   canPlaceToken,
-  PersonalPublicGameState,
+  DerivedPublicGameState,
   TokenType,
 } from "src/shared";
 
 const width = 726;
 
 interface PlayerBoardProps {
-  gameState: PersonalPublicGameState;
+  gameState: DerivedPublicGameState;
   sendAction: (action: ActionType) => void;
 }
 export function PlayerBoard({ gameState, sendAction }: PlayerBoardProps) {

@@ -1,6 +1,12 @@
 import usePartySocket from "partysocket/react";
 import { startTransition, useState } from "react";
-import { PersonalPublicGameState, PublicGameState, User } from "src/shared";
+import {
+  DerivedPublicGameState,
+  User,
+  Broadcast,
+  PlayersById,
+  ActionType,
+} from "src/shared";
 import { Game } from "./Game";
 
 interface GameSocketProps {
@@ -8,9 +14,11 @@ interface GameSocketProps {
   user: User;
 }
 export function GameSocket({ roomId, user }: GameSocketProps) {
-  const [gameState, setGameState] = useState<PersonalPublicGameState | null>(
+  const [gameState, setGameState] = useState<DerivedPublicGameState | null>(
     null,
   );
+
+  const [playersById, setPlayersById] = useState<PlayersById | null>(null);
 
   const socket = usePartySocket({
     // host defaults to the current URL if not set
@@ -19,17 +27,53 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
     host: "localhost:1999",
     room: roomId,
     query: () => ({
-      user: JSON.stringify(user),
+      player: JSON.stringify(user),
     }),
     onMessage(evt) {
-      const gameState = JSON.parse(evt.data) as PublicGameState;
-      const thisPlayer = gameState.players[user.id];
-      if (!thisPlayer) throw new Error("Player data not found");
-      startTransition(() => setGameState({ ...gameState, player: thisPlayer }));
+      console.log(evt);
+      const broadcast = JSON.parse(evt.data) as Broadcast;
+      switch (broadcast.type) {
+        case "players":
+          setPlayersById(broadcast.players);
+          break;
+        case "gameState":
+          console.log(broadcast);
+          startTransition(() => setGameState(broadcast.gameState));
+          break;
+        default:
+          broadcast satisfies never;
+      }
     },
   });
 
+  console.log(playersById, gameState);
+
+  function sendAction(action: ActionType) {
+    return socket.send(JSON.stringify(action));
+  }
+
+  if (playersById && !gameState) {
+    return (
+      <div>
+        <div>Players:</div>
+        {Object.values(playersById).map((player) => (
+          <div key={player.id}>{player.name}</div>
+        ))}
+        <button
+          onClick={() => {
+            sendAction({
+              type: "startGame",
+            });
+          }}
+          className="rounded bg-stone-200 px-2 py-1 text-stone-900 hover:bg-stone-300 active:bg-stone-400"
+        >
+          Start Game
+        </button>
+      </div>
+    );
+  }
+
   if (!gameState) return null;
 
-  return <Game gameState={gameState} socket={socket} />;
+  return <Game gameState={gameState} sendAction={sendAction} />;
 }

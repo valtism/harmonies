@@ -1,7 +1,7 @@
 import { CSSProperties } from "react";
 import CentralBoardImg from "src/assets/centralBoard.webp";
 import { Token } from "src/components/Token";
-import { PublicGameState } from "src/shared";
+import { DerivedPublicGameState } from "src/shared";
 
 const centralBoardStyles: CSSProperties[] = [
   { top: "11%", left: "20%" },
@@ -12,7 +12,7 @@ const centralBoardStyles: CSSProperties[] = [
 ];
 
 interface CentralBoardProps {
-  state: PublicGameState["centralBoard"];
+  state: DerivedPublicGameState["centralBoard"];
   onClick: (zone: number) => void;
 }
 export function CentralBoard({ state, onClick }: CentralBoardProps) {
@@ -46,7 +46,7 @@ const tokenStyles: CSSProperties[] = [
 ];
 
 interface BoardZoneProps {
-  tokens: PublicGameState["centralBoard"][number];
+  tokens: DerivedPublicGameState["centralBoard"][number];
   onClick: () => void;
   style?: CSSProperties;
 }

@@ -1,18 +1,13 @@
-import PartySocket from "partysocket";
 import { CentralBoard } from "src/components/CentralBoard";
 import { PlayerBoard } from "src/components/PlayerBoard";
-import { ActionType, PersonalPublicGameState } from "src/shared";
+import { ActionType, DerivedPublicGameState } from "src/shared";
 
 interface GameProps {
-  gameState: PersonalPublicGameState;
-  socket: PartySocket;
+  gameState: DerivedPublicGameState;
+  sendAction: (action: ActionType) => void;
 }
-export function Game({ gameState, socket }: GameProps) {
+export function Game({ gameState, sendAction }: GameProps) {
   console.log(gameState);
-
-  function sendAction(action: ActionType) {
-    return socket.send(JSON.stringify(action));
-  }
 
   return (
     <div className="mb-60 flex flex-col items-start">
@@ -40,9 +35,9 @@ export function Game({ gameState, socket }: GameProps) {
 
       <div className="text-white">
         <div className="font-bold">Players:</div>
-        {gameState.playerList.map((player) => (
+        {/* {gameState.playerList.map((player) => (
           <div key={player.id}>{player.name}</div>
-        ))}
+        ))} */}
       </div>
     </div>
   );
