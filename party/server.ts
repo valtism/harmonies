@@ -124,7 +124,6 @@ export default class Server implements Party.Server {
       this.publicGameState.players[user.id] = {
         board: {},
         takenTokens: [null, null, null],
-        placing: null,
       };
     }
 
@@ -148,11 +147,12 @@ export default class Server implements Party.Server {
           // }
           this.takeTokens(userId, action.payload);
           break;
-        case "grabToken":
-          this.grabFromTaken(userId, action.payload.takenIndex);
-          break;
         case "placeToken":
-          this.placeToken(userId, action.payload.coords);
+          this.placeToken(
+            userId,
+            action.payload.tokenId,
+            action.payload.coords,
+          );
           break;
         default:
           action satisfies never;
@@ -214,7 +214,6 @@ export default class Server implements Party.Server {
       acc[player.id] = {
         board: {},
         takenTokens: [null, null, null],
-        placing: null,
       };
       return acc;
     }, {});
@@ -241,34 +240,19 @@ export default class Server implements Party.Server {
     this.allocateAndBroadcast();
   }
 
-  grabFromTaken(playerId: string, index: number) {
-    for (const key in this.privateGameState.tokensById) {
-      const token = this.privateGameState.tokensById[key];
-      if (
-        token.type === "taken" &&
-        token.position.player === playerId &&
-        token.position.place === index
-      ) {
-        const newToken: TokenType = {
-          id: token.id,
-          color: token.color,
-          type: "placing",
-          position: { player: playerId },
-        };
-        this.privateGameState.tokensById[key] = newToken;
-      }
-    }
-    this.allocateAndBroadcast();
-  }
-
-  placeToken(playerId: string, coords: string) {
-    const placingToken = this.publicGameState.players[playerId].placing;
+  placeToken(playerId: string, tokenId: string, coords: string) {
+    const placingToken = this.privateGameState.tokensById[tokenId];
     if (!placingToken) throw new Error("No token found");
+    if (
+      placingToken.type !== "taken" ||
+      placingToken.position.player !== playerId
+    ) {
+      throw new Error("Invalid token");
+    }
 
     const stack: TokenType[] = [];
     for (const key in this.privateGameState.tokensById) {
       const token = this.privateGameState.tokensById[key];
-      if (token.type === "playerBoard") console.log(token);
       if (
         token.type === "playerBoard" &&
         token.position.player === playerId &&
@@ -320,7 +304,6 @@ export default class Server implements Party.Server {
           return board;
         }, {}),
         takenTokens: [null, null, null],
-        placing: null,
       };
       return players;
     }, {});
@@ -338,9 +321,6 @@ export default class Server implements Party.Server {
         case "taken":
           players[token.position.player].takenTokens[token.position.place] =
             token;
-          break;
-        case "placing":
-          players[token.position.player].placing = token;
           break;
         case "playerBoard":
           players[token.position.player].board[

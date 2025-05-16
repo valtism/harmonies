@@ -31,5 +31,5 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
 
   if (!gameState) return null;
 
-  return <Game gameState={gameState} socket={socket} user={user} />;
+  return <Game gameState={gameState} socket={socket} />;
 }

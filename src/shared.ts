@@ -134,10 +134,6 @@ export type TokenType =
       position: { player: string; place: number };
     })
   | (BaseToken & {
-      type: "placing";
-      position: { player: string };
-    })
-  | (BaseToken & {
       type: "playerBoard";
       position: {
         player: string;
@@ -176,7 +172,6 @@ export interface PublicGameState {
         }
       >;
       takenTokens: [TokenType | null, TokenType | null, TokenType | null];
-      placing: TokenType | null;
     }
   >;
 }
@@ -194,7 +189,10 @@ export interface PersonalPublicGameState extends PublicGameState {
 
 // export type PrivateGameState = z.infer<typeof privateGameStateSchema>;
 
-export function canPlaceToken(token: TokenType | null, stack: TokenType[]) {
+export function canPlaceToken(
+  token: TokenType | null,
+  stack: TokenType[],
+): boolean {
   if (!token) return false;
   const topToken = stack.at(-1);
 
@@ -238,9 +236,7 @@ export function canPlaceToken(token: TokenType | null, stack: TokenType[]) {
     }
   }
 
-  if (stack.length > 2) {
-    return false;
-  }
+  return false;
 }
 
 const startGameActionSchema = z.object({
@@ -252,16 +248,11 @@ const takeTokensSchema = z.object({
   payload: z.number(),
 });
 
-const grabTokenSchema = z.object({
-  type: z.literal("grabToken"),
-  payload: z.object({
-    takenIndex: z.number(),
-  }),
-});
 
 const placeTokenSchema = z.object({
   type: z.literal("placeToken"),
   payload: z.object({
+    tokenId: z.string(),
     coords: z.string(),
   }),
 });
@@ -270,7 +261,6 @@ export const actionSchema = z.union([
   startGameActionSchema,
   // addPlayerActionSchema,
   takeTokensSchema,
-  grabTokenSchema,
   placeTokenSchema,
 ]);
 

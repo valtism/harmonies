@@ -1,8 +1,15 @@
 import clsx from "clsx";
 import { defineHex, Grid, Orientation } from "honeycomb-grid";
+import { startTransition, useEffect, useState } from "react";
 import BoardSideA from "src/assets/boardSideA.webp";
+import { PlacingToken } from "src/components/PlacingToken";
 import { Token } from "src/components/Token";
-import { ActionType, canPlaceToken, PersonalPublicGameState } from "src/shared";
+import {
+  ActionType,
+  canPlaceToken,
+  PersonalPublicGameState,
+  TokenType,
+} from "src/shared";
 
 const width = 726;
 
@@ -11,12 +18,34 @@ interface PlayerBoardProps {
   sendAction: (action: ActionType) => void;
 }
 export function PlayerBoard({ gameState, sendAction }: PlayerBoardProps) {
+  const [placingToken, setPlacingToken] = useState<TokenType | null>(null);
+  // Unset placingToken only once server has placed the token on the board
+  // Need to do this to make ViewTransition work smoothly.
+  if (
+    Object.values(gameState.player.board).some(({ tokens }) =>
+      tokens.some((token) => token.id === placingToken?.id),
+    )
+  ) {
+    setPlacingToken(null);
+  }
+
+  useEffect(() => {
+    const handleKey = ({ key }: KeyboardEvent) => {
+      if (key === "Escape" && placingToken) {
+        setPlacingToken(null);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [placingToken]);
+
   const Hex = defineHex({
     dimensions: width / 14,
     orientation: Orientation.FLAT,
     origin: "topLeft",
   });
-
   const grid = new Grid(Hex, gameState.grid);
 
   return (
@@ -28,7 +57,7 @@ export function PlayerBoard({ gameState, sendAction }: PlayerBoardProps) {
           const key = hex.toString();
           const tile = gameState.player.board[key];
           const tokens = tile?.tokens || [];
-          const tokenPlacable = canPlaceToken(gameState.player.placing, tokens);
+          const tokenPlacable = canPlaceToken(placingToken, tokens);
 
           return (
             <div
@@ -55,13 +84,17 @@ export function PlayerBoard({ gameState, sendAction }: PlayerBoardProps) {
                   />
                 ))}
                 <button
-                  onClick={() => {
-                    if (!tokenPlacable) return;
-                    sendAction({
-                      type: "placeToken",
-                      payload: {
-                        coords: key,
-                      },
+                  onClick={async () => {
+                    if (!placingToken || !tokenPlacable) return;
+                    startTransition(() => {
+                      sendAction({
+                        type: "placeToken",
+                        payload: {
+                          coords: key,
+                          tokenId: placingToken.id,
+                        },
+                      });
+                      // setPlacingToken(null);
                     });
                   }}
                   className={clsx(
@@ -85,14 +118,14 @@ export function PlayerBoard({ gameState, sendAction }: PlayerBoardProps) {
       >
         {gameState.player.takenTokens.map((token, index) => {
           if (!token) return;
+          if (token.id === placingToken?.id) return null;
           return (
             <button
               key={token.id}
-              onClick={() => {
-                sendAction({
-                  type: "grabToken",
-                  payload: { takenIndex: index },
-                });
+              onClick={() => setPlacingToken(token)}
+              style={{
+                position: "absolute",
+                top: `${index * (100 / 3)}%`,
               }}
             >
               <Token token={token} />
@@ -100,6 +133,7 @@ export function PlayerBoard({ gameState, sendAction }: PlayerBoardProps) {
           );
         })}
       </div>
+      <PlacingToken token={placingToken} />
     </div>
   );
 }
