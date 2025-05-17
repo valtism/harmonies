@@ -1,14 +1,15 @@
 import { z } from "zod";
 
-export const Color = {
-  Blue: "blue",
-  Gray: "gray",
-  Brown: "brown",
-  Green: "green",
-  Yellow: "yellow",
-  Red: "red",
-} as const;
-export type ColorType = (typeof Color)[keyof typeof Color];
+export type DeepImmutable<T> =
+  T extends Map<infer K, infer V>
+    ? ReadonlyMap<DeepImmutable<K>, DeepImmutable<V>>
+    : T extends Set<infer S>
+      ? ReadonlySet<DeepImmutable<S>>
+      : T extends object
+        ? { readonly [K in keyof T]: DeepImmutable<T[K]> }
+        : T;
+
+export type ColorType = "blue" | "gray" | "brown" | "green" | "yellow" | "red";
 
 export const userSchema = z.object({
   id: z.string(),
@@ -47,6 +48,8 @@ export interface PrivateGameState {
   currentPlayerId: string | null;
 }
 
+export type ImmutablePrivateGameState = DeepImmutable<PrivateGameState>;
+
 interface PlayerState {
   board: Record<
     string,
@@ -84,17 +87,17 @@ export function canPlaceToken(
 
   if (stack.length === 1) {
     switch (token.color) {
-      case Color.Blue:
-      case Color.Yellow:
+      case "blue":
+      case "yellow":
         return false;
-      case Color.Gray:
-        return topToken.color === Color.Gray;
-      case Color.Brown:
-        return topToken.color === Color.Brown;
-      case Color.Green:
-        return topToken.color === Color.Brown;
-      case Color.Red:
-        return [Color.Gray, Color.Brown, Color.Red].includes(topToken.color);
+      case "gray":
+        return topToken.color === "gray";
+      case "brown":
+        return topToken.color === "brown";
+      case "green":
+        return topToken.color === "brown";
+      case "red":
+        return ["gray", "brown", "red"].includes(topToken.color);
       default:
         token.color satisfies never;
         return false;
@@ -103,15 +106,15 @@ export function canPlaceToken(
 
   if (stack.length === 2) {
     switch (token.color) {
-      case Color.Blue:
-      case Color.Yellow:
-      case Color.Brown:
-      case Color.Red:
+      case "blue":
+      case "yellow":
+      case "brown":
+      case "red":
         return false;
-      case Color.Gray:
-        return topToken.color === Color.Gray;
-      case Color.Green:
-        return topToken.color === Color.Brown;
+      case "gray":
+        return topToken.color === "gray";
+      case "green":
+        return topToken.color === "brown";
       default:
         token.color satisfies never;
         return false;
@@ -148,8 +151,7 @@ export type ActionType = z.infer<typeof actionSchema>;
 
 export interface History {
   action: ActionType;
-  privateGameState: PrivateGameState;
-  publicGameStat: DerivedPublicGameState;
+  gameState: ImmutablePrivateGameState;
 }
 
 export type PlayersById = Record<string, User>;

@@ -37,7 +37,6 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
           setPlayersById(broadcast.players);
           break;
         case "gameState":
-          console.log(broadcast);
           startTransition(() => setGameState(broadcast.gameState));
           break;
         default:
@@ -45,8 +44,6 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
       }
     },
   });
-
-  console.log(playersById, gameState);
 
   function sendAction(action: ActionType) {
     return socket.send(JSON.stringify(action));
