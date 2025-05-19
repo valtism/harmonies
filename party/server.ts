@@ -48,7 +48,7 @@ export default class Server implements Party.Server {
     conn.setState({ playerId: player.id });
 
     this.playersById[player.id] = player;
-
+    console.log(this.gameState);
     if (this.isGameStarted()) {
       this.broadcast({ type: "gameState", gameState: this.derivedGameState! });
     } else {
@@ -63,7 +63,6 @@ export default class Server implements Party.Server {
     const action = actionSchema.parse(JSON.parse(message));
     const playerId = sender.state?.playerId;
     if (!playerId) throw new Error("Missing playerId");
-    // const isPlayerTurn = userId === this.publicGameState.currentPlayerId;
 
     this.performAction(playerId, action);
 
@@ -87,11 +86,19 @@ export default class Server implements Party.Server {
       });
     }
 
+    if (action.type === "startGame") {
+      // Special case for startGame
+      this.startGame();
+      this.allocateAndBroadcast();
+      return;
+    }
+
     if (action.type === "undo") {
       // Special case for undo
       const { gameState } = this.history.pop()!;
       this.gameState = gameState!;
-      return this.allocateAndBroadcast(playerId);
+      this.allocateAndBroadcast();
+      return;
     }
 
     try {
@@ -103,7 +110,7 @@ export default class Server implements Party.Server {
         gameState: oldGameState,
       });
       this.gameState = newGameState;
-      this.allocateAndBroadcast(playerId);
+      this.allocateAndBroadcast();
     } catch (error) {
       // TODO: Broadcast the error
       console.error(error);
@@ -152,8 +159,6 @@ export default class Server implements Party.Server {
     action: ActionType,
   ): ImmutablePrivateGameState {
     switch (action.type) {
-      case "startGame":
-        return this.startGame();
       case "takeTokens":
         return this.takeTokens(playerId, action.payload);
       case "placeToken":
@@ -162,6 +167,7 @@ export default class Server implements Party.Server {
           action.payload.tokenId,
           action.payload.coords,
         );
+      case "startGame":
       case "undo":
         break;
       default:
@@ -177,10 +183,10 @@ export default class Server implements Party.Server {
   }
 
   isGameStarted() {
-    return this.history.some(({ action }) => action.type === "startGame");
+    return !!this.gameState;
   }
 
-  startGame(): ImmutablePrivateGameState {
+  startGame(): void {
     const playerIdList = shuffle(Object.keys(this.playersById));
 
     const tokensById = shuffle([...allTokens]).reduce<
@@ -213,7 +219,7 @@ export default class Server implements Party.Server {
     const currentPlayerId = playerIdList[0];
     if (!currentPlayerId) throw new Error("No players found");
 
-    return {
+    this.gameState = {
       boardType: "A",
       playerIdList: playerIdList,
       currentPlayerId: currentPlayerId,
@@ -318,6 +324,10 @@ export default class Server implements Party.Server {
     };
   }
 
+  canEndTurn(playerId: string): CanPerformAction {
+    return { ok: true };
+  }
+
   canUndo(playerId: string): CanPerformAction {
     const lastHistory = this.history.at(-1);
     if (
@@ -329,12 +339,12 @@ export default class Server implements Party.Server {
     return { ok: true };
   }
 
-  allocateAndBroadcast(playerId: string) {
-    this.deriveGameState(playerId);
+  allocateAndBroadcast() {
+    this.deriveGameState();
     this.broadcast({ type: "gameState", gameState: this.derivedGameState });
   }
 
-  deriveGameState(playerId: string) {
+  deriveGameState() {
     const grid = grids[this.gameState.boardType];
 
     const centralBoard: DerivedPublicGameState["centralBoard"] = [
@@ -394,7 +404,6 @@ export default class Server implements Party.Server {
       grid: grid,
       centralBoard: centralBoard,
       players: players,
-      player: players[playerId],
     };
   }
 

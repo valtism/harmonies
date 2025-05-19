@@ -30,8 +30,16 @@ export function Game({ gameState, sendAction }: GameProps) {
           });
         }}
       />
-      <div></div>
-      <PlayerBoard gameState={gameState} sendAction={sendAction} />
+
+      {Object.values(gameState.players).map((player) => (
+        <div key={player.id} style={{ width: 400 }}>
+          <PlayerBoard
+            playerId={player.id}
+            gameState={gameState}
+            sendAction={sendAction}
+          />
+        </div>
+      ))}
 
       <div className="text-white">
         <div className="font-bold">Players:</div>

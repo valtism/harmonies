@@ -73,7 +73,6 @@ export interface DerivedPublicGameState {
     [TokenType | null, TokenType | null, TokenType | null],
   ];
   players: Record<string, PlayerState>;
-  player: PlayerState;
 }
 
 export function tokenPlacable(
@@ -143,6 +142,10 @@ const placeTokenSchema = z.object({
   }),
 });
 
+// const endTurnSchema = z.object({
+//   type: z.literal("endTurn"),
+// });
+
 const undoSchema = z.object({
   type: z.literal("undo"),
 });
@@ -151,6 +154,7 @@ export const actionSchema = z.union([
   startGameActionSchema,
   takeTokensSchema,
   placeTokenSchema,
+  // endTurnSchema,
   undoSchema,
 ]);
 
@@ -163,7 +167,7 @@ type ActionHistory = ActionType & {
 
 export interface History {
   action: ActionHistory;
-  gameState: ImmutablePrivateGameState | undefined;
+  gameState: ImmutablePrivateGameState;
 }
 
 export type PlayersById = Record<string, User>;
