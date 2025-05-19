@@ -167,6 +167,7 @@ export type Broadcast =
     }
   | {
       type: "error";
+      playerId: string;
       message: string;
     };
 

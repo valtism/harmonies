@@ -16,7 +16,9 @@ import {
 } from "../src/sharedTypes";
 import { allTokens, grids } from "./constants";
 
-type StatefulPartyConnection = Party.Connection<{ playerId: string }>;
+type StatefulPartyConnection = Party.Connection<
+  Party.ConnectionState<{ playerId: string }>
+>;
 
 export default class Server implements Party.Server {
   playersById: PlayersById;
@@ -74,7 +76,11 @@ export default class Server implements Party.Server {
   performAction(playerId: string, action: ActionType) {
     const canDo = this.canPerformAction(playerId, action);
     if (!canDo.ok) {
-      return this.broadcast({ type: "error", message: canDo.message });
+      return this.broadcast({
+        type: "error",
+        playerId: playerId,
+        message: canDo.message,
+      });
     }
     try {
       const newGameState = this.newStateFromAction(playerId, action);
@@ -91,7 +97,6 @@ export default class Server implements Party.Server {
   }
 
   canPerformAction(playerId: string, action: ActionType): CanPerformAction {
-    console.log(this.gameState?.currentPlayerId === playerId, "cando");
     if (
       this.gameState?.currentPlayerId &&
       this.gameState?.currentPlayerId !== playerId
@@ -182,6 +187,10 @@ export default class Server implements Party.Server {
   }
 
   canTakeTokens(): CanPerformAction {
+    if (this.history.at(-1)?.action.type === "takeTokens") {
+      // TODO: Do this better
+      return { ok: false, message: "Already taken tokens" };
+    }
     return { ok: true };
   }
 
@@ -210,13 +219,6 @@ export default class Server implements Party.Server {
   }
 
   canPlaceToken(playerId: string): CanPerformAction {
-    if (this.gameState.currentPlayerId !== playerId) {
-      return { ok: false, message: null };
-    }
-    if (this.history.at(-1)?.action.type === "takeTokens") {
-      // TODO: Do this better
-      return { ok: false, message: null };
-    }
     return { ok: true };
   }
 

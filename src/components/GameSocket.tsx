@@ -43,6 +43,7 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
           });
           break;
         case "error":
+          if (broadcast.playerId !== user.id) return;
           toastQueue.add(
             {
               type: "error",
