@@ -3,3 +3,29 @@
 .hexagon {
   clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
 }
+
+.react-aria-Toast {
+  view-transition-class: toast;
+}
+
+::view-transition-new(.toast):only-child {
+  animation: slide-in 400ms;
+}
+
+::view-transition-old(.toast):only-child {
+  animation: slide-out 400ms;
+}
+
+@keyframes slide-out {
+  to {
+    translate: 100% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    translate: 100% 0;
+    opacity: 0;
+  }
+}

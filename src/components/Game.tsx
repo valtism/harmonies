@@ -1,6 +1,6 @@
 import { CentralBoard } from "src/components/CentralBoard";
 import { PlayerBoard } from "src/components/PlayerBoard";
-import { ActionType, DerivedPublicGameState } from "src/shared";
+import { ActionType, DerivedPublicGameState } from "src/sharedTypes";
 
 interface GameProps {
   gameState: DerivedPublicGameState;
@@ -19,7 +19,7 @@ export function Game({ gameState, sendAction }: GameProps) {
           });
         }}
       >
-        Start Game
+        Start
       </button>
       <CentralBoard
         state={gameState.centralBoard}

@@ -1,12 +1,13 @@
 import usePartySocket from "partysocket/react";
 import { startTransition, useState } from "react";
+import { toastQueue } from "src/components/toastQueue";
 import {
-  DerivedPublicGameState,
-  User,
-  Broadcast,
-  PlayersById,
   ActionType,
-} from "src/shared";
+  Broadcast,
+  DerivedPublicGameState,
+  PlayersById,
+  User,
+} from "src/sharedTypes";
 import { Game } from "./Game";
 
 interface GameSocketProps {
@@ -37,7 +38,20 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
           setPlayersById(broadcast.players);
           break;
         case "gameState":
-          startTransition(() => setGameState(broadcast.gameState));
+          startTransition(() => {
+            setGameState(broadcast.gameState);
+          });
+          break;
+        case "error":
+          toastQueue.add(
+            {
+              type: "error",
+              message: broadcast.message,
+            },
+            {
+              timeout: 5000,
+            },
+          );
           break;
         default:
           broadcast satisfies never;

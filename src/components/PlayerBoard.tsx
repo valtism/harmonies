@@ -6,10 +6,10 @@ import { PlacingToken } from "src/components/PlacingToken";
 import { Token } from "src/components/Token";
 import {
   ActionType,
-  canPlaceToken,
   DerivedPublicGameState,
+  tokenPlacable,
   TokenType,
-} from "src/shared";
+} from "src/sharedTypes";
 
 const width = 726;
 
@@ -57,7 +57,7 @@ export function PlayerBoard({ gameState, sendAction }: PlayerBoardProps) {
           const key = hex.toString();
           const tile = gameState.player.board[key];
           const tokens = tile?.tokens || [];
-          const tokenPlacable = canPlaceToken(placingToken, tokens);
+          const isTokenPlacable = tokenPlacable(placingToken, tokens);
 
           return (
             <div
@@ -85,7 +85,7 @@ export function PlayerBoard({ gameState, sendAction }: PlayerBoardProps) {
                 ))}
                 <button
                   onClick={async () => {
-                    if (!placingToken || !tokenPlacable) return;
+                    if (!placingToken || !isTokenPlacable) return;
                     startTransition(() => {
                       sendAction({
                         type: "placeToken",
@@ -99,7 +99,7 @@ export function PlayerBoard({ gameState, sendAction }: PlayerBoardProps) {
                   }}
                   className={clsx(
                     "hexagon absolute inset-0 cursor-[unset] hover:bg-black/20",
-                    tokenPlacable && "bg-white/20",
+                    isTokenPlacable && "bg-white/20",
                   )}
                 />
               </div>

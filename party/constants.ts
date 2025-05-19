@@ -1,4 +1,4 @@
-import { ColorType, DerivedPublicGameState } from "../src/shared";
+import { ColorType, DerivedPublicGameState } from "../src/sharedTypes";
 
 export const Color = {
   Blue: "blue",

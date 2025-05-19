@@ -74,7 +74,7 @@ export interface DerivedPublicGameState {
   player: PlayerState;
 }
 
-export function canPlaceToken(
+export function tokenPlacable(
   token: TokenType | null,
   stack: TokenType[],
 ): boolean {
@@ -164,4 +164,10 @@ export type Broadcast =
   | {
       type: "gameState";
       gameState: DerivedPublicGameState;
+    }
+  | {
+      type: "error";
+      message: string;
     };
+
+export type CanPerformAction = { ok: true } | { ok: false; message: string };
