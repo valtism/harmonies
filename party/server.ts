@@ -49,10 +49,14 @@ export default class Server implements Party.Server {
 
     this.playersById[player.id] = player;
 
-    this.broadcast({
-      type: "players",
-      players: this.playersById,
-    });
+    if (this.isGameStarted()) {
+      this.broadcast({ type: "gameState", gameState: this.derivedGameState! });
+    } else {
+      this.broadcast({
+        type: "players",
+        players: this.playersById,
+      });
+    }
   }
 
   onMessage(message: string, sender: StatefulPartyConnection) {
@@ -167,7 +171,13 @@ export default class Server implements Party.Server {
   }
 
   canStartGame(): CanPerformAction {
-    return { ok: true };
+    return this.isGameStarted()
+      ? { ok: false, message: "Game has already started" }
+      : { ok: true };
+  }
+
+  isGameStarted() {
+    return this.history.some(({ action }) => action.type === "startGame");
   }
 
   startGame(): ImmutablePrivateGameState {
@@ -339,6 +349,8 @@ export default class Server implements Party.Server {
       DerivedPublicGameState["players"]
     >((players, playerId) => {
       players[playerId] = {
+        id: playerId,
+        name: this.playersById[playerId].name,
         board: grid.reduce<DerivedPublicGameState["players"][string]["board"]>(
           (board, [q, r]) => {
             const key = `(${q},${r})`;

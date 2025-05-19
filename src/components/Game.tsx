@@ -11,16 +11,6 @@ export function Game({ gameState, sendAction }: GameProps) {
 
   return (
     <div className="mb-60 flex flex-col items-start">
-      {/* <button
-        className="rounded bg-stone-100 px-2 py-1 text-stone-900 hover:bg-stone-300"
-        onClick={() => {
-          sendAction({
-            type: "startGame",
-          });
-        }}
-      >
-        Start
-      </button> */}
       <button
         className="rounded bg-stone-100 px-2 py-1 text-stone-900 hover:bg-stone-300"
         onClick={() => {
@@ -45,9 +35,9 @@ export function Game({ gameState, sendAction }: GameProps) {
 
       <div className="text-white">
         <div className="font-bold">Players:</div>
-        {/* {gameState.playerList.map((player) => (
+        {Object.values(gameState.players).map((player) => (
           <div key={player.id}>{player.name}</div>
-        ))} */}
+        ))}
       </div>
     </div>
   );

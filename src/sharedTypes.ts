@@ -51,6 +51,8 @@ export interface PrivateGameState {
 export type ImmutablePrivateGameState = DeepImmutable<PrivateGameState>;
 
 interface PlayerState {
+  id: string;
+  name: string;
   board: Record<
     string,
     {
