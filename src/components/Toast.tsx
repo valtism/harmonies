@@ -50,8 +50,8 @@ function ToastItem({ toast }: { toast: QueuedToast<ToastType> }) {
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
+            fillRule="evenodd"
+            clipRule="evenodd"
             d="M3.00012 2.2929L3.35368 2.64645L8.00006 7.29288L12.6466 2.64645L13.0001 2.2929L13.7072 3.00001L13.3537 3.35356L8.70717 7.99999L13.3537 12.6464L13.7072 13L13.0001 13.7071L12.6466 13.3536L8.00006 8.7071L3.35367 13.3535L3.00012 13.7071L2.29301 13L2.64656 12.6464L7.29296 7.99999L2.64657 3.35356L2.29301 3L3.00012 2.2929Z"
           />
         </svg>

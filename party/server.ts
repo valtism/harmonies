@@ -82,17 +82,41 @@ export default class Server implements Party.Server {
         message: canDo.message,
       });
     }
+
+    if (action.type === "undo") {
+      // Special case for undo
+      const { gameState } = this.history.pop()!;
+      this.gameState = gameState!;
+      return this.allocateAndBroadcast(playerId);
+    }
+
     try {
+      const oldGameState = this.gameState;
       const newGameState = this.newStateFromAction(playerId, action);
+      const canUndo = this.canUndoAction(action);
       this.history.push({
-        action: action,
-        gameState: newGameState,
+        action: { ...action, canUndo: canUndo },
+        gameState: oldGameState,
       });
       this.gameState = newGameState;
       this.allocateAndBroadcast(playerId);
     } catch (error) {
       // TODO: Broadcast the error
       console.error(error);
+    }
+  }
+
+  canUndoAction(action: ActionType): boolean {
+    switch (action.type) {
+      case "startGame":
+      case "undo":
+        return false;
+      case "takeTokens":
+      case "placeToken":
+        return true;
+      default:
+        action satisfies never;
+        throw new Error("Should not happen");
     }
   }
 
@@ -108,9 +132,11 @@ export default class Server implements Party.Server {
       case "startGame":
         return this.canStartGame();
       case "takeTokens":
-        return this.canTakeTokens();
+        return this.canTakeTokens(playerId);
       case "placeToken":
-        return this.canPlaceToken(playerId);
+        return this.canPlaceToken();
+      case "undo":
+        return this.canUndo(playerId);
       default:
         action satisfies never;
     }
@@ -125,9 +151,6 @@ export default class Server implements Party.Server {
       case "startGame":
         return this.startGame();
       case "takeTokens":
-        // if (!isPlayerTurn) {
-        //   throw new Error("Not your turn");
-        // }
         return this.takeTokens(playerId, action.payload);
       case "placeToken":
         return this.placeToken(
@@ -135,6 +158,8 @@ export default class Server implements Party.Server {
           action.payload.tokenId,
           action.payload.coords,
         );
+      case "undo":
+        break;
       default:
         action satisfies never;
     }
@@ -186,10 +211,15 @@ export default class Server implements Party.Server {
     };
   }
 
-  canTakeTokens(): CanPerformAction {
-    if (this.history.at(-1)?.action.type === "takeTokens") {
-      // TODO: Do this better
-      return { ok: false, message: "Already taken tokens" };
+  canTakeTokens(playerId: string): CanPerformAction {
+    for (let i = this.history.length; i > 0; i--) {
+      const history = this.history[i - 1];
+      if (history.gameState?.currentPlayerId === playerId) {
+        break;
+      }
+      if (history.action.type === "takeTokens") {
+        return { ok: false, message: "Already taken tokens" };
+      }
     }
     return { ok: true };
   }
@@ -218,7 +248,7 @@ export default class Server implements Party.Server {
     };
   }
 
-  canPlaceToken(playerId: string): CanPerformAction {
+  canPlaceToken(): CanPerformAction {
     return { ok: true };
   }
 
@@ -276,6 +306,17 @@ export default class Server implements Party.Server {
       ...this.gameState,
       tokensById,
     };
+  }
+
+  canUndo(playerId: string): CanPerformAction {
+    const lastHistory = this.history.at(-1);
+    if (
+      !lastHistory ||
+      lastHistory.gameState?.currentPlayerId !== playerId ||
+      !lastHistory.action.canUndo
+    )
+      return { ok: false, message: "Cannot undo" };
+    return { ok: true };
   }
 
   allocateAndBroadcast(playerId: string) {

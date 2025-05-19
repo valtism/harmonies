@@ -11,7 +11,7 @@ export function Game({ gameState, sendAction }: GameProps) {
 
   return (
     <div className="mb-60 flex flex-col items-start">
-      <button
+      {/* <button
         className="rounded bg-stone-100 px-2 py-1 text-stone-900 hover:bg-stone-300"
         onClick={() => {
           sendAction({
@@ -20,6 +20,16 @@ export function Game({ gameState, sendAction }: GameProps) {
         }}
       >
         Start
+      </button> */}
+      <button
+        className="rounded bg-stone-100 px-2 py-1 text-stone-900 hover:bg-stone-300"
+        onClick={() => {
+          sendAction({
+            type: "undo",
+          });
+        }}
+      >
+        Undo
       </button>
       <CentralBoard
         state={gameState.centralBoard}

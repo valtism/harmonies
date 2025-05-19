@@ -141,17 +141,27 @@ const placeTokenSchema = z.object({
   }),
 });
 
+const undoSchema = z.object({
+  type: z.literal("undo"),
+});
+
 export const actionSchema = z.union([
   startGameActionSchema,
   takeTokensSchema,
   placeTokenSchema,
+  undoSchema,
 ]);
 
 export type ActionType = z.infer<typeof actionSchema>;
 
+type ActionHistory = ActionType & {
+  // playerId: string;
+  canUndo: boolean;
+};
+
 export interface History {
-  action: ActionType;
-  gameState: ImmutablePrivateGameState;
+  action: ActionHistory;
+  gameState: ImmutablePrivateGameState | undefined;
 }
 
 export type PlayersById = Record<string, User>;
