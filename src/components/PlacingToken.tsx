@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Token } from "src/components/Token";
-import { TokenType } from "src/shared";
+import { TokenType } from "src/sharedTypes";
 
 interface PlacingTokenProps {
   token: TokenType | null;
@@ -36,7 +36,6 @@ export function PlacingToken({ token }: PlacingTokenProps) {
         top: pos.y,
         width: 40,
         height: 40,
-        // background: "red",
         pointerEvents: "none",
       }}
     />

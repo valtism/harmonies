@@ -48,7 +48,7 @@ export default class Server implements Party.Server {
     conn.setState({ playerId: player.id });
 
     this.playersById[player.id] = player;
-    console.log(this.gameState);
+
     if (this.isGameStarted()) {
       this.broadcast({ type: "gameState", gameState: this.derivedGameState! });
     } else {
@@ -65,6 +65,8 @@ export default class Server implements Party.Server {
     if (!playerId) throw new Error("Missing playerId");
 
     this.performAction(playerId, action);
+
+    console.log(this.history, this.gameState);
 
     // let's log the message
     console.log(`connection ${sender.id} sent message: ${message}`);
@@ -120,6 +122,7 @@ export default class Server implements Party.Server {
   canUndoAction(action: ActionType): boolean {
     switch (action.type) {
       case "startGame":
+      case "endTurn":
       case "undo":
         return false;
       case "takeTokens":
@@ -146,6 +149,8 @@ export default class Server implements Party.Server {
         return this.canTakeTokens(playerId);
       case "placeToken":
         return this.canPlaceToken();
+      case "endTurn":
+        return this.canEndTurn(playerId);
       case "undo":
         return this.canUndo(playerId);
       default:
@@ -167,6 +172,8 @@ export default class Server implements Party.Server {
           action.payload.tokenId,
           action.payload.coords,
         );
+      case "endTurn":
+        return this.endTurn(playerId);
       case "startGame":
       case "undo":
         break;
@@ -230,7 +237,7 @@ export default class Server implements Party.Server {
   canTakeTokens(playerId: string): CanPerformAction {
     for (let i = this.history.length; i > 0; i--) {
       const history = this.history[i - 1];
-      if (history.gameState?.currentPlayerId === playerId) {
+      if (history.gameState.currentPlayerId !== playerId) {
         break;
       }
       if (history.action.type === "takeTokens") {
@@ -325,14 +332,75 @@ export default class Server implements Party.Server {
   }
 
   canEndTurn(playerId: string): CanPerformAction {
-    return { ok: true };
+    const hasPlacedAllTokens = this.derivedGameState.players[
+      playerId
+    ].takenTokens.every((token) => token === null);
+    let hasTakenTokens = false;
+    for (let i = this.history.length; i > 0; i--) {
+      const history = this.history[i - 1];
+      if (history.gameState.currentPlayerId !== playerId) {
+        return hasTakenTokens && hasPlacedAllTokens
+          ? { ok: true }
+          : { ok: false, message: "Unfinished turn" };
+      }
+      if (history.action.type === "takeTokens") {
+        hasTakenTokens = true;
+      }
+    }
+
+    return hasTakenTokens && hasPlacedAllTokens
+      ? { ok: true }
+      : { ok: false, message: "Unfinished turn" };
+  }
+
+  endTurn(playerId: string): ImmutablePrivateGameState {
+    // Change to next player
+    const index = this.gameState.playerIdList.indexOf(playerId);
+    const nextPlayerId =
+      this.gameState.playerIdList[
+        (index + 1) % this.gameState.playerIdList.length
+      ];
+
+    // Replenish central boardType
+    let centralBoardZones = [0, 1, 2, 3, 4];
+    for (const key in this.gameState.tokensById) {
+      const token = this.gameState.tokensById[key];
+      if (token.type === "centralBoard") {
+        centralBoardZones = centralBoardZones.filter(
+          (zone) => zone !== token.position.zone,
+        );
+      }
+    }
+    if (centralBoardZones.length !== 1) {
+      throw new Error("Invalid central board state");
+    }
+    const zoneToReplenish = centralBoardZones[0];
+    const tokensById = {};
+    const tokensToAllocate = 3;
+    let place = 0;
+    for (const key in this.gameState.tokensById) {
+      const token = this.gameState.tokensById[key];
+      if (place < tokensToAllocate && token.type === "pouch") {
+        const newToken: TokenType = {
+          ...token,
+          type: "centralBoard",
+          position: { zone: zoneToReplenish, place: place },
+        };
+        tokensById[key] = newToken;
+        place++;
+      } else {
+        tokensById[key] = token;
+      }
+    }
+
+    return { ...this.gameState, tokensById, currentPlayerId: nextPlayerId };
   }
 
   canUndo(playerId: string): CanPerformAction {
     const lastHistory = this.history.at(-1);
     if (
       !lastHistory ||
-      lastHistory.gameState?.currentPlayerId !== playerId ||
+      lastHistory.gameState.currentPlayerId !== playerId ||
       !lastHistory.action.canUndo
     )
       return { ok: false, message: "Cannot undo" };
@@ -400,10 +468,14 @@ export default class Server implements Party.Server {
       }
     }
 
+    const currentPlayerId = this.gameState.currentPlayerId;
+    if (!currentPlayerId) throw new Error("No current player");
+
     this.derivedGameState = {
       grid: grid,
       centralBoard: centralBoard,
       players: players,
+      currentPlayerId: currentPlayerId,
     };
   }
 

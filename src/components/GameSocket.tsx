@@ -87,5 +87,7 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
 
   if (!gameState) return null;
 
-  return <Game gameState={gameState} sendAction={sendAction} />;
+  return (
+    <Game gameState={gameState} sendAction={sendAction} playerId={user.id} />
+  );
 }

@@ -5,12 +5,16 @@ import { ActionType, DerivedPublicGameState } from "src/sharedTypes";
 interface GameProps {
   gameState: DerivedPublicGameState;
   sendAction: (action: ActionType) => void;
+  playerId: string;
 }
-export function Game({ gameState, sendAction }: GameProps) {
+export function Game({ gameState, sendAction, playerId }: GameProps) {
   console.log(gameState);
 
   return (
     <div className="mb-60 flex flex-col items-start">
+      {gameState.currentPlayerId === playerId && (
+        <div className="fixed top-2 right-4">Your turn!</div>
+      )}
       <button
         className="rounded bg-stone-100 px-2 py-1 text-stone-900 hover:bg-stone-300"
         onClick={() => {
@@ -20,6 +24,16 @@ export function Game({ gameState, sendAction }: GameProps) {
         }}
       >
         Undo
+      </button>
+      <button
+        className="rounded bg-stone-100 px-2 py-1 text-stone-900 hover:bg-stone-300"
+        onClick={() => {
+          sendAction({
+            type: "endTurn",
+          });
+        }}
+      >
+        End turn
       </button>
       <CentralBoard
         state={gameState.centralBoard}

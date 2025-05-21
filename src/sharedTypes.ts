@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export type DeepImmutable<T> =
   T extends Map<infer K, infer V>
@@ -73,6 +73,7 @@ export interface DerivedPublicGameState {
     [TokenType | null, TokenType | null, TokenType | null],
   ];
   players: Record<string, PlayerState>;
+  currentPlayerId: string;
 }
 
 export function tokenPlacable(
@@ -142,9 +143,9 @@ const placeTokenSchema = z.object({
   }),
 });
 
-// const endTurnSchema = z.object({
-//   type: z.literal("endTurn"),
-// });
+const endTurnSchema = z.object({
+  type: z.literal("endTurn"),
+});
 
 const undoSchema = z.object({
   type: z.literal("undo"),
@@ -154,7 +155,7 @@ export const actionSchema = z.union([
   startGameActionSchema,
   takeTokensSchema,
   placeTokenSchema,
-  // endTurnSchema,
+  endTurnSchema,
   undoSchema,
 ]);
 
