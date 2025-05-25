@@ -30,44 +30,9 @@ import rayCard from "src/assets/animalCards/ray.webp";
 import shrewCard from "src/assets/animalCards/shrew.webp";
 import squirrelCard from "src/assets/animalCards/squirrel.webp";
 import wolfCard from "src/assets/animalCards/wolf.webp";
-import { AnimalCard, AnimalCardId } from "src/sharedTypes";
+import { AnimalCard } from "src/sharedTypes";
 
-export const animalCardIds = [
-  "alligator",
-  "alpaca",
-  "arctic_fox",
-  "bat",
-  "bear",
-  "bee",
-  "boar",
-  "crow",
-  "duck",
-  "falcon",
-  "fennic_fox",
-  "fish",
-  "flamingo",
-  "frog",
-  "headgehog",
-  "kingfisher",
-  "koala",
-  "ladybug",
-  "lizard",
-  "macaque",
-  "macaw",
-  "meerkat",
-  "otter",
-  "panther",
-  "peacock",
-  "penguin",
-  "rabbit",
-  "raccoon",
-  "ray",
-  "shrew",
-  "squirrel",
-  "wolf",
-] as const;
-
-export const animalCards: Record<AnimalCardId, AnimalCard> = {
+export const animalCards = {
   alligator: {
     imageSrc: alligatorCard,
     scores: [4, 9, 15],
