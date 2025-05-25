@@ -1,5 +1,7 @@
 import "@total-typescript/ts-reset";
 import type * as Party from "partykit/server";
+import { grids } from "../src/constants/grids";
+import { allTokens } from "../src/constants/tokens";
 import {
   ActionType,
   Broadcast,
@@ -14,7 +16,6 @@ import {
   tokenPlacable,
   userSchema,
 } from "../src/sharedTypes";
-import { allTokens, grids } from "./constants";
 
 type StatefulPartyConnection = Party.Connection<
   Party.ConnectionState<{ playerId: string }>
@@ -235,6 +236,7 @@ export default class Server implements Party.Server {
   }
 
   canTakeTokens(playerId: string): CanPerformAction {
+    return { ok: true };
     for (let i = this.history.length; i > 0; i--) {
       const history = this.history[i - 1];
       if (history.gameState.currentPlayerId !== playerId) {
