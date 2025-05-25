@@ -19,7 +19,7 @@ export type User = z.infer<typeof userSchema>;
 
 type BaseToken = {
   id: string;
-  color: "blue" | "gray" | "brown" | "green" | "yellow" | "red";
+  color: ColorType;
 };
 export type TokenType =
   | (BaseToken & {

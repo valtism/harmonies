@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { defineHex, Grid, Orientation } from "honeycomb-grid";
+import { defineHex, fromCoordinates, Grid, Orientation } from "honeycomb-grid";
 import { startTransition, useEffect, useRef, useState } from "react";
 import BoardSideA from "src/assets/boardSideA.webp";
 import { PlacingToken } from "src/components/PlacingToken";
@@ -10,6 +10,49 @@ import {
   tokenPlacable,
   TokenType,
 } from "src/sharedTypes";
+
+const debug = true;
+
+const butterfly = {
+  name: "Butterfly",
+  shape: [
+    {
+      coords: { q: 0, r: 0 },
+      tokens: ["yellow"],
+    },
+    {
+      coords: { q: 1, r: 0 },
+      tokens: ["blue"],
+    },
+    {
+      coords: { q: 0, r: 1 },
+      tokens: ["blue"],
+    },
+    {
+      coords: { q: 1, r: 1 },
+      tokens: ["yellow"],
+    },
+  ],
+};
+
+type Coords = { q: number; r: number };
+
+function rotate(coords: Readonly<Coords>, steps: number): Coords {
+  let newCoords = coords;
+  for (let i = 0; i < steps; i++) {
+    newCoords = rotateOnce(newCoords);
+  }
+  return newCoords;
+}
+
+function rotateOnce(coords: Readonly<Coords>): Coords {
+  const s = -coords.q - coords.r;
+  return { q: -coords.r, r: -s };
+}
+
+function translate(coords: Readonly<Coords>, delta: Readonly<Coords>): Coords {
+  return { q: coords.q + delta.q, r: coords.r + delta.r };
+}
 
 interface PlayerBoardProps {
   playerId: string;
@@ -68,6 +111,63 @@ export function PlayerBoard({
     orientation: Orientation.FLAT,
     origin: "topLeft",
   });
+  gameState.players[playerId]!.board["(1,1)"] = {
+    cube: null,
+    tokens: [
+      {
+        id: crypto.randomUUID(),
+        color: "yellow",
+        type: "playerBoard",
+        position: {
+          player: playerId,
+          place: { coords: "(1,1)", stackPostion: 0 },
+        },
+      },
+    ],
+  };
+  gameState.players[playerId]!.board["(2,0)"] = {
+    cube: null,
+    tokens: [
+      {
+        id: crypto.randomUUID(),
+        color: "blue",
+        type: "playerBoard",
+        position: {
+          player: playerId,
+          place: { coords: "(2,0)", stackPostion: 0 },
+        },
+      },
+    ],
+  };
+  gameState.players[playerId]!.board["(2,1)"] = {
+    cube: null,
+    tokens: [
+      {
+        id: crypto.randomUUID(),
+        color: "blue",
+        type: "playerBoard",
+        position: {
+          player: playerId,
+          place: { coords: "(2,1)", stackPostion: 0 },
+        },
+      },
+    ],
+  };
+  gameState.players[playerId]!.board["(3,0)"] = {
+    cube: null,
+    tokens: [
+      {
+        id: crypto.randomUUID(),
+        color: "yellow",
+        type: "playerBoard",
+        position: {
+          player: playerId,
+          place: { coords: "(3,0)", stackPostion: 0 },
+        },
+      },
+    ],
+  };
+
   const grid = new Grid(Hex, gameState.grid);
 
   return (
@@ -80,6 +180,36 @@ export function PlayerBoard({
           const tile = player.board[key];
           const tokens = tile?.tokens || [];
           const isTokenPlacable = tokenPlacable(placingToken, tokens);
+
+          const positions = butterfly.shape.map((tile) => tile.coords);
+          const rotations = [0, 1, 2, 3, 4, 5].map((rotation) =>
+            positions.map((position) => rotate(position, rotation)),
+          );
+          const relativePositions = rotations.map((roatation) =>
+            roatation.map((coords) =>
+              translate(coords, { q: hex.q, r: hex.r }),
+            ),
+          );
+          const traversers = relativePositions.map((positions) =>
+            fromCoordinates(...positions),
+          );
+
+          const matches = traversers.map((traverser) => {
+            const trav = grid.traverse(traverser, { bail: false }).toArray();
+            // TODO: Make me dynamic
+            if (trav.length !== 4) return false;
+
+            return trav.reduce((isMatch, hex, index) => {
+              const hexTokens =
+                gameState.players[playerId]!.board[hex.toString()]!.tokens;
+              const shapeTokens = butterfly.shape[index]!.tokens;
+              const stackMatch =
+                hexTokens.length === shapeTokens.length &&
+                hexTokens.every((token, i) => token.color === shapeTokens[i]);
+              return isMatch && stackMatch;
+            }, true);
+          });
+          const hasMatch = matches.some((match) => match);
 
           return (
             <div
@@ -105,6 +235,11 @@ export function PlayerBoard({
                     }}
                   />
                 ))}
+                {debug && (
+                  <div className="pointer-events-none z-10 font-black text-white text-shadow-lg">
+                    {key}
+                  </div>
+                )}
                 <button
                   onClick={async () => {
                     if (!placingToken || !isTokenPlacable) return;
@@ -116,7 +251,6 @@ export function PlayerBoard({
                           tokenId: placingToken.id,
                         },
                       });
-                      // setPlacingToken(null);
                     });
                   }}
                   className={clsx(
@@ -124,6 +258,9 @@ export function PlayerBoard({
                     isTokenPlacable && "bg-white/20",
                   )}
                 />
+                {hasMatch && (
+                  <div className="absolute inset-0 size-full bg-green-500/20" />
+                )}
               </div>
             </div>
           );

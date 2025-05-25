@@ -14,7 +14,11 @@ export function NameSelect({ onNameChange }: NameSelectProps) {
     >
       <label>
         Name:
-        <input type="text" name="name" />
+        <input
+          type="text"
+          name="name"
+          defaultValue={Math.floor(Math.random() * 16777215).toString(16)}
+        />
       </label>
       <button type="submit">Submit</button>
     </form>

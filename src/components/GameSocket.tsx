@@ -49,9 +49,7 @@ export function GameSocket({ roomId, user }: GameSocketProps) {
               type: "error",
               message: broadcast.message,
             },
-            {
-              timeout: 5000,
-            },
+            { timeout: 5000 },
           );
           break;
         default:
