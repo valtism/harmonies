@@ -1,10 +1,10 @@
 import { unstable_ViewTransition as ViewTransition } from "react";
-import TokenBlue from "src/assets/tokenBlue.webp";
-import TokenBrown from "src/assets/tokenBrown.webp";
-import TokenGray from "src/assets/tokenGray.webp";
-import TokenGreen from "src/assets/tokenGreen.webp";
-import TokenRed from "src/assets/tokenRed.webp";
-import TokenYellow from "src/assets/tokenYellow.webp";
+import TokenBlue from "src/assets/tokens/tokenBlue.webp";
+import TokenBrown from "src/assets/tokens/tokenBrown.webp";
+import TokenGray from "src/assets/tokens/tokenGray.webp";
+import TokenGreen from "src/assets/tokens/tokenGreen.webp";
+import TokenRed from "src/assets/tokens/tokenRed.webp";
+import TokenYellow from "src/assets/tokens/tokenYellow.webp";
 import { TokenType } from "src/sharedTypes";
 
 const tokenImage = {
