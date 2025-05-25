@@ -1,3 +1,4 @@
+import { animalCardIds } from "src/constants/animalCards";
 import { z } from "zod/v4";
 
 export type DeepImmutable<T> =
@@ -189,3 +190,19 @@ export type Broadcast =
     };
 
 export type CanPerformAction = { ok: true } | { ok: false; message: string };
+
+export type AnimalCardId = (typeof animalCardIds)[number];
+
+export type AnimalCard = {
+  imageSrc: string;
+  scores: number[];
+  shape: Shape[];
+};
+
+export type Shape = {
+  coordinates: { q: number; r: number };
+  topToken: {
+    color: ColorType;
+    index: number;
+  };
+};
