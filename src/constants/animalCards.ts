@@ -1,7 +1,8 @@
-import { AnimalCard } from "src/sharedTypes";
+import { AnimalCardId, BaseAnimalCard } from "src/sharedTypes";
 
 export const animalCards = {
   alligator: {
+    id: "alligator",
     scores: [4, 9, 15],
     shape: [
       {
@@ -19,6 +20,7 @@ export const animalCards = {
     ],
   },
   alpaca: {
+    id: "alpaca",
     scores: [5, 12],
     shape: [
       {
@@ -36,6 +38,7 @@ export const animalCards = {
     ],
   },
   arctic_fox: {
+    id: "arctic_fox",
     scores: [5, 12],
     shape: [
       {
@@ -53,6 +56,7 @@ export const animalCards = {
     ],
   },
   bat: {
+    id: "bat",
     scores: [3, 6, 10, 15],
     shape: [
       {
@@ -66,6 +70,7 @@ export const animalCards = {
     ],
   },
   bear: {
+    id: "bear",
     scores: [5, 11],
     shape: [
       {
@@ -83,6 +88,7 @@ export const animalCards = {
     ],
   },
   bee: {
+    id: "bee",
     scores: [8, 18],
     shape: [
       {
@@ -104,6 +110,7 @@ export const animalCards = {
     ],
   },
   boar: {
+    id: "boar",
     scores: [4, 8, 13],
     shape: [
       {
@@ -117,6 +124,7 @@ export const animalCards = {
     ],
   },
   crow: {
+    id: "crow",
     scores: [4, 9],
     shape: [
       {
@@ -134,6 +142,7 @@ export const animalCards = {
     ],
   },
   duck: {
+    id: "duck",
     scores: [2, 4, 8, 13],
     shape: [
       {
@@ -147,6 +156,7 @@ export const animalCards = {
     ],
   },
   falcon: {
+    id: "falcon",
     scores: [5, 11],
     shape: [
       {
@@ -160,6 +170,7 @@ export const animalCards = {
     ],
   },
   fennic_fox: {
+    id: "fennic_fox",
     scores: [4, 9, 16],
     shape: [
       {
@@ -177,6 +188,7 @@ export const animalCards = {
     ],
   },
   fish: {
+    id: "fish",
     scores: [3, 6, 10, 16],
     shape: [
       {
@@ -190,6 +202,7 @@ export const animalCards = {
     ],
   },
   flamingo: {
+    id: "flamingo",
     scores: [4, 10, 16],
     shape: [
       {
@@ -207,6 +220,7 @@ export const animalCards = {
     ],
   },
   frog: {
+    id: "frog",
     scores: [2, 4, 6, 10, 15],
     shape: [
       {
@@ -220,6 +234,7 @@ export const animalCards = {
     ],
   },
   headgehog: {
+    id: "headgehog",
     scores: [5, 12],
     shape: [
       {
@@ -237,6 +252,7 @@ export const animalCards = {
     ],
   },
   kingfisher: {
+    id: "kingfisher",
     scores: [5, 11, 18],
     shape: [
       {
@@ -254,6 +270,7 @@ export const animalCards = {
     ],
   },
   koala: {
+    id: "koala",
     scores: [3, 6, 10, 15],
     shape: [
       {
@@ -267,6 +284,7 @@ export const animalCards = {
     ],
   },
   ladybug: {
+    id: "ladybug",
     scores: [2, 5, 8, 12, 17],
     shape: [
       {
@@ -280,6 +298,7 @@ export const animalCards = {
     ],
   },
   lizard: {
+    id: "lizard",
     scores: [5, 10, 16],
     shape: [
       {
@@ -297,6 +316,7 @@ export const animalCards = {
     ],
   },
   macaque: {
+    id: "macaque",
     scores: [5, 11],
     shape: [
       {
@@ -314,6 +334,7 @@ export const animalCards = {
     ],
   },
   macaw: {
+    id: "macaw",
     scores: [4, 9, 14],
     shape: [
       {
@@ -331,6 +352,7 @@ export const animalCards = {
     ],
   },
   meerkat: {
+    id: "meerkat",
     scores: [2, 5, 9, 14],
     shape: [
       {
@@ -344,6 +366,7 @@ export const animalCards = {
     ],
   },
   otter: {
+    id: "otter",
     scores: [5, 10, 16],
     shape: [
       {
@@ -361,6 +384,7 @@ export const animalCards = {
     ],
   },
   panther: {
+    id: "panther",
     scores: [5, 11],
     shape: [
       {
@@ -378,6 +402,7 @@ export const animalCards = {
     ],
   },
   peacock: {
+    id: "peacock",
     scores: [5, 10, 17],
     shape: [
       {
@@ -395,6 +420,7 @@ export const animalCards = {
     ],
   },
   penguin: {
+    id: "penguin",
     scores: [4, 10, 16],
     shape: [
       {
@@ -412,6 +438,7 @@ export const animalCards = {
     ],
   },
   rabbit: {
+    id: "rabbit",
     scores: [5, 10, 17],
     shape: [
       {
@@ -429,6 +456,7 @@ export const animalCards = {
     ],
   },
   raccoon: {
+    id: "raccoon",
     scores: [6, 12],
     shape: [
       {
@@ -450,6 +478,7 @@ export const animalCards = {
     ],
   },
   ray: {
+    id: "ray",
     scores: [4, 10, 16],
     shape: [
       {
@@ -467,6 +496,7 @@ export const animalCards = {
     ],
   },
   shrew: {
+    id: "shrew",
     scores: [5, 10, 17],
     shape: [
       {
@@ -484,6 +514,7 @@ export const animalCards = {
     ],
   },
   squirrel: {
+    id: "squirrel",
     scores: [4.9, 15],
     shape: [
       {
@@ -497,6 +528,7 @@ export const animalCards = {
     ],
   },
   wolf: {
+    id: "wolf",
     scores: [4, 10, 16],
     shape: [
       {
@@ -513,4 +545,4 @@ export const animalCards = {
       },
     ],
   },
-} as const satisfies Record<string, AnimalCard>;
+} as const satisfies Record<AnimalCardId, BaseAnimalCard>;

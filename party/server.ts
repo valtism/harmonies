@@ -1,9 +1,11 @@
 import "@total-typescript/ts-reset";
 import type * as Party from "partykit/server";
+import { animalCards } from "../src/constants/animalCards";
 import { grids } from "../src/constants/grids";
 import { allTokens } from "../src/constants/tokens";
 import {
   ActionType,
+  AnimalCardType,
   Broadcast,
   CanPerformAction,
   DerivedPublicGameState,
@@ -66,8 +68,6 @@ export default class Server implements Party.Server {
     if (!playerId) throw new Error("Missing playerId");
 
     this.performAction(playerId, action);
-
-    console.log(this.history, this.gameState);
 
     // let's log the message
     console.log(`connection ${sender.id} sent message: ${message}`);
@@ -199,30 +199,47 @@ export default class Server implements Party.Server {
 
     const tokensById = shuffle([...allTokens]).reduce<
       PrivateGameState["tokensById"]
-    >((tokensById, color) => {
-      const token: TokenType = {
-        id: `token-${crypto.randomUUID()}`,
-        color,
-        type: "pouch",
-      };
-      tokensById[token.id] = token;
+    >((tokensById, color, index) => {
+      if (index < 15) {
+        const zone = Math.floor(index / 3);
+        const place = index % 3;
+        const token: TokenType = {
+          id: `token-${crypto.randomUUID()}`,
+          color,
+          type: "centralBoard",
+          position: { zone, place },
+        };
+        tokensById[token.id] = token;
+      } else {
+        const token: TokenType = {
+          id: `token-${crypto.randomUUID()}`,
+          color,
+          type: "pouch",
+        };
+        tokensById[token.id] = token;
+      }
       return tokensById;
     }, {});
 
-    let i = 0;
-    for (const key in tokensById) {
-      if (i >= 15) continue;
-      const zone = Math.floor(i / 3);
-      const place = i % 3;
-      const token = tokensById[key]!;
-      token.type = "centralBoard";
-      if (token.type !== "centralBoard") {
-        // Make type checker happy
-        throw new Error("Should never happen");
+    const animalCardsById = shuffle(Object.entries(animalCards)).reduce<
+      PrivateGameState["animalCardsById"]
+    >((animalCardsById, [id, animalCard], index) => {
+      if (index < 5) {
+        const card: AnimalCardType = {
+          ...animalCard,
+          type: "spread",
+          position: { index: index },
+        };
+        animalCardsById[id] = card;
+      } else {
+        const card: AnimalCardType = {
+          ...animalCard,
+          type: "deck",
+        };
+        animalCardsById[id] = card;
       }
-      token.position = { zone, place };
-      i++;
-    }
+      return animalCardsById;
+    }, {});
 
     const currentPlayerId = playerIdList[0];
     if (!currentPlayerId) throw new Error("No players found");
@@ -232,6 +249,7 @@ export default class Server implements Party.Server {
       playerIdList: playerIdList,
       currentPlayerId: currentPlayerId,
       tokensById: tokensById,
+      animalCardsById: animalCardsById,
     };
   }
 
@@ -473,11 +491,39 @@ export default class Server implements Party.Server {
     const currentPlayerId = this.gameState.currentPlayerId;
     if (!currentPlayerId) throw new Error("No current player");
 
+    const animalCardSpread: DerivedPublicGameState["animalCardSpread"] = [
+      null,
+      null,
+      null,
+      null,
+      null,
+    ];
+    for (const key in this.gameState.animalCardsById) {
+      const animalCard = this.gameState.animalCardsById[key];
+      switch (animalCard.type) {
+        case "deck":
+          // TODO
+          break;
+        case "spread":
+          animalCardSpread[animalCard.position.index] = animalCard;
+          break;
+        case "playerBoard":
+          // TODO
+          break;
+        case "playerCompleted":
+          // TODO
+          break;
+        default:
+          animalCard satisfies never;
+      }
+    }
+
     this.derivedGameState = {
       grid: grid,
       centralBoard: centralBoard,
       players: players,
       currentPlayerId: currentPlayerId,
+      animalCardSpread: animalCardSpread,
     };
   }
 

@@ -1,3 +1,4 @@
+import { animalCardImages } from "src/constants/animalCardImages";
 import { animalCards } from "src/constants/animalCards";
 import { spiritCards } from "src/constants/spiritCards";
 import { z } from "zod/v4";
@@ -43,8 +44,25 @@ export type TokenType =
       };
     });
 
+export type AnimalCardType =
+  | (BaseAnimalCard & {
+      type: "deck";
+    })
+  | (BaseAnimalCard & {
+      type: "spread";
+      position: { index: number };
+    })
+  | (BaseAnimalCard & {
+      type: "playerBoard";
+      position: { index: number };
+    })
+  | (BaseAnimalCard & {
+      type: "playerCompleted";
+    });
+
 export interface PrivateGameState {
   tokensById: Record<string, TokenType>;
+  animalCardsById: Record<string, AnimalCardType>;
   boardType: "A" | "B";
   playerIdList: string[];
   currentPlayerId: string | null;
@@ -67,6 +85,15 @@ interface PlayerState {
 
 export interface DerivedPublicGameState {
   grid: [number, number][];
+  currentPlayerId: string;
+  players: Record<string, PlayerState>;
+  animalCardSpread: [
+    AnimalCardType | null,
+    AnimalCardType | null,
+    AnimalCardType | null,
+    AnimalCardType | null,
+    AnimalCardType | null,
+  ];
   centralBoard: [
     [TokenType | null, TokenType | null, TokenType | null],
     [TokenType | null, TokenType | null, TokenType | null],
@@ -74,8 +101,6 @@ export interface DerivedPublicGameState {
     [TokenType | null, TokenType | null, TokenType | null],
     [TokenType | null, TokenType | null, TokenType | null],
   ];
-  players: Record<string, PlayerState>;
-  currentPlayerId: string;
 }
 
 export function tokenPlacable(
@@ -192,9 +217,10 @@ export type Broadcast =
 
 export type CanPerformAction = { ok: true } | { ok: false; message: string };
 
-export type AnimalCard = {
-  scores: number[];
-  shape: Shape[];
+export type BaseAnimalCard = {
+  id: AnimalCardId;
+  scores: readonly number[];
+  shape: readonly Shape[];
 };
 
 export type SpiritCard = {
@@ -210,6 +236,6 @@ type Shape = {
   };
 };
 
-export type AnimalCardId = keyof typeof animalCards;
+export type AnimalCardId = keyof typeof animalCardImages;
 
 export type SpiritCardId = keyof typeof spiritCards;

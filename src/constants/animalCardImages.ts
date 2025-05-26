@@ -65,4 +65,4 @@ export const animalCardImages = {
   shrew: shrewCard,
   squirrel: squirrelCard,
   wolf: wolfCard,
-} as const satisfies Record<AnimalCardId, string>;
+} as const satisfies Record<string, string>;

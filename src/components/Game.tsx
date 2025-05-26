@@ -1,3 +1,4 @@
+import { AnimalCardSpread } from "src/components/AnimalCardSpread";
 import { CentralBoard } from "src/components/CentralBoard";
 import { PlayerBoard } from "src/components/PlayerBoard";
 import { ActionType, DerivedPublicGameState } from "src/sharedTypes";
@@ -44,6 +45,8 @@ export function Game({ gameState, sendAction, playerId }: GameProps) {
           });
         }}
       />
+
+      <AnimalCardSpread spread={gameState.animalCardSpread} />
 
       {Object.values(gameState.players).map((player) => (
         <div key={player.id} style={{ width: 400 }}>
