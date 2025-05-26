@@ -1,40 +1,7 @@
-import alligatorCard from "src/assets/animalCards/alligator.webp";
-import alpacaCard from "src/assets/animalCards/alpaca.webp";
-import arcticFoxCard from "src/assets/animalCards/arctic_fox.webp";
-import batCard from "src/assets/animalCards/bat.webp";
-import bearCard from "src/assets/animalCards/bear.webp";
-import beeCard from "src/assets/animalCards/bee.webp";
-import boarCard from "src/assets/animalCards/boar.webp";
-import crowCard from "src/assets/animalCards/crow.webp";
-import duckCard from "src/assets/animalCards/duck.webp";
-import falconCard from "src/assets/animalCards/falcon.webp";
-import fennicFoxCard from "src/assets/animalCards/fennic_fox.webp";
-import fishCard from "src/assets/animalCards/fish.webp";
-import flamingoCard from "src/assets/animalCards/flamingo.webp";
-import frogCard from "src/assets/animalCards/frog.webp";
-import headgehogCard from "src/assets/animalCards/headgehog.webp";
-import kingfisherCard from "src/assets/animalCards/kingfisher.webp";
-import koalaCard from "src/assets/animalCards/koala.webp";
-import ladybugCard from "src/assets/animalCards/ladybug.webp";
-import lizardCard from "src/assets/animalCards/lizard.webp";
-import macaqueCard from "src/assets/animalCards/macaque.webp";
-import macawCard from "src/assets/animalCards/macaw.webp";
-import meerkatCard from "src/assets/animalCards/meerkat.webp";
-import otterCard from "src/assets/animalCards/otter.webp";
-import pantherCard from "src/assets/animalCards/panther.webp";
-import peacockCard from "src/assets/animalCards/peacock.webp";
-import penguinCard from "src/assets/animalCards/penguin.webp";
-import rabbitCard from "src/assets/animalCards/rabbit.webp";
-import raccoonCard from "src/assets/animalCards/raccoon.webp";
-import rayCard from "src/assets/animalCards/ray.webp";
-import shrewCard from "src/assets/animalCards/shrew.webp";
-import squirrelCard from "src/assets/animalCards/squirrel.webp";
-import wolfCard from "src/assets/animalCards/wolf.webp";
 import { AnimalCard } from "src/sharedTypes";
 
 export const animalCards = {
   alligator: {
-    imageSrc: alligatorCard,
     scores: [4, 9, 15],
     shape: [
       {
@@ -52,7 +19,6 @@ export const animalCards = {
     ],
   },
   alpaca: {
-    imageSrc: alpacaCard,
     scores: [5, 12],
     shape: [
       {
@@ -70,7 +36,6 @@ export const animalCards = {
     ],
   },
   arctic_fox: {
-    imageSrc: arcticFoxCard,
     scores: [5, 12],
     shape: [
       {
@@ -88,7 +53,6 @@ export const animalCards = {
     ],
   },
   bat: {
-    imageSrc: batCard,
     scores: [3, 6, 10, 15],
     shape: [
       {
@@ -102,7 +66,6 @@ export const animalCards = {
     ],
   },
   bear: {
-    imageSrc: bearCard,
     scores: [5, 11],
     shape: [
       {
@@ -120,7 +83,6 @@ export const animalCards = {
     ],
   },
   bee: {
-    imageSrc: beeCard,
     scores: [8, 18],
     shape: [
       {
@@ -142,7 +104,6 @@ export const animalCards = {
     ],
   },
   boar: {
-    imageSrc: boarCard,
     scores: [4, 8, 13],
     shape: [
       {
@@ -156,7 +117,6 @@ export const animalCards = {
     ],
   },
   crow: {
-    imageSrc: crowCard,
     scores: [4, 9],
     shape: [
       {
@@ -174,7 +134,6 @@ export const animalCards = {
     ],
   },
   duck: {
-    imageSrc: duckCard,
     scores: [2, 4, 8, 13],
     shape: [
       {
@@ -188,7 +147,6 @@ export const animalCards = {
     ],
   },
   falcon: {
-    imageSrc: falconCard,
     scores: [5, 11],
     shape: [
       {
@@ -202,7 +160,6 @@ export const animalCards = {
     ],
   },
   fennic_fox: {
-    imageSrc: fennicFoxCard,
     scores: [4, 9, 16],
     shape: [
       {
@@ -220,7 +177,6 @@ export const animalCards = {
     ],
   },
   fish: {
-    imageSrc: fishCard,
     scores: [3, 6, 10, 16],
     shape: [
       {
@@ -234,7 +190,6 @@ export const animalCards = {
     ],
   },
   flamingo: {
-    imageSrc: flamingoCard,
     scores: [4, 10, 16],
     shape: [
       {
@@ -252,7 +207,6 @@ export const animalCards = {
     ],
   },
   frog: {
-    imageSrc: frogCard,
     scores: [2, 4, 6, 10, 15],
     shape: [
       {
@@ -266,7 +220,6 @@ export const animalCards = {
     ],
   },
   headgehog: {
-    imageSrc: headgehogCard,
     scores: [5, 12],
     shape: [
       {
@@ -284,7 +237,6 @@ export const animalCards = {
     ],
   },
   kingfisher: {
-    imageSrc: kingfisherCard,
     scores: [5, 11, 18],
     shape: [
       {
@@ -302,7 +254,6 @@ export const animalCards = {
     ],
   },
   koala: {
-    imageSrc: koalaCard,
     scores: [3, 6, 10, 15],
     shape: [
       {
@@ -316,7 +267,6 @@ export const animalCards = {
     ],
   },
   ladybug: {
-    imageSrc: ladybugCard,
     scores: [2, 5, 8, 12, 17],
     shape: [
       {
@@ -330,7 +280,6 @@ export const animalCards = {
     ],
   },
   lizard: {
-    imageSrc: lizardCard,
     scores: [5, 10, 16],
     shape: [
       {
@@ -348,7 +297,6 @@ export const animalCards = {
     ],
   },
   macaque: {
-    imageSrc: macaqueCard,
     scores: [5, 11],
     shape: [
       {
@@ -366,7 +314,6 @@ export const animalCards = {
     ],
   },
   macaw: {
-    imageSrc: macawCard,
     scores: [4, 9, 14],
     shape: [
       {
@@ -384,7 +331,6 @@ export const animalCards = {
     ],
   },
   meerkat: {
-    imageSrc: meerkatCard,
     scores: [2, 5, 9, 14],
     shape: [
       {
@@ -398,7 +344,6 @@ export const animalCards = {
     ],
   },
   otter: {
-    imageSrc: otterCard,
     scores: [5, 10, 16],
     shape: [
       {
@@ -416,7 +361,6 @@ export const animalCards = {
     ],
   },
   panther: {
-    imageSrc: pantherCard,
     scores: [5, 11],
     shape: [
       {
@@ -434,7 +378,6 @@ export const animalCards = {
     ],
   },
   peacock: {
-    imageSrc: peacockCard,
     scores: [5, 10, 17],
     shape: [
       {
@@ -452,7 +395,6 @@ export const animalCards = {
     ],
   },
   penguin: {
-    imageSrc: penguinCard,
     scores: [4, 10, 16],
     shape: [
       {
@@ -470,7 +412,6 @@ export const animalCards = {
     ],
   },
   rabbit: {
-    imageSrc: rabbitCard,
     scores: [5, 10, 17],
     shape: [
       {
@@ -488,7 +429,6 @@ export const animalCards = {
     ],
   },
   raccoon: {
-    imageSrc: raccoonCard,
     scores: [6, 12],
     shape: [
       {
@@ -510,7 +450,6 @@ export const animalCards = {
     ],
   },
   ray: {
-    imageSrc: rayCard,
     scores: [4, 10, 16],
     shape: [
       {
@@ -528,7 +467,6 @@ export const animalCards = {
     ],
   },
   shrew: {
-    imageSrc: shrewCard,
     scores: [5, 10, 17],
     shape: [
       {
@@ -546,7 +484,6 @@ export const animalCards = {
     ],
   },
   squirrel: {
-    imageSrc: squirrelCard,
     scores: [4.9, 15],
     shape: [
       {
@@ -560,7 +497,6 @@ export const animalCards = {
     ],
   },
   wolf: {
-    imageSrc: wolfCard,
     scores: [4, 10, 16],
     shape: [
       {

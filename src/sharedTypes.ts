@@ -193,7 +193,6 @@ export type Broadcast =
 export type CanPerformAction = { ok: true } | { ok: false; message: string };
 
 export type AnimalCard = {
-  imageSrc: string;
   scores: number[];
   shape: Shape[];
 };

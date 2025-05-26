@@ -1,11 +1,9 @@
-import { animalCards } from "src/constants/animalCards";
+import { animalCardImages } from "src/constants/animalCardImages";
 import { AnimalCardId } from "src/sharedTypes";
 
 interface AnimalCardProps {
   animalCardId: AnimalCardId;
 }
 export function AnimalCard({ animalCardId }: AnimalCardProps) {
-  const animalCard = animalCards[animalCardId];
-
-  return <img src={animalCard.imageSrc} alt={animalCardId} />;
+  return <img src={animalCardImages[animalCardId]} alt={animalCardId} />;
 }
