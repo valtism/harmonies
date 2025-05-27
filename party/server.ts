@@ -241,6 +241,18 @@ export default class Server implements Party.Server {
       return animalCardsById;
     }, {});
 
+    const animalCubesById: PrivateGameState["animalCubesById"] = Array.from({
+      length: 66,
+    })
+      .map(() => ({
+        id: `animal-cube-${crypto.randomUUID()}`,
+        type: "pouch",
+      }))
+      .reduce((cubesById, cube) => {
+        cubesById[cube.id] = cube;
+        return cubesById;
+      }, {});
+
     const currentPlayerId = playerIdList[0];
     if (!currentPlayerId) throw new Error("No players found");
 
@@ -250,6 +262,7 @@ export default class Server implements Party.Server {
       currentPlayerId: currentPlayerId,
       tokensById: tokensById,
       animalCardsById: animalCardsById,
+      animalCubesById: animalCubesById,
     };
   }
 

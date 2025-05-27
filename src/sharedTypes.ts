@@ -1,5 +1,4 @@
 import { animalCardImages } from "src/constants/animalCardImages";
-import { animalCards } from "src/constants/animalCards";
 import { spiritCards } from "src/constants/spiritCards";
 import { z } from "zod/v4";
 
@@ -60,9 +59,26 @@ export type AnimalCardType =
       type: "playerCompleted";
     });
 
+export type AnimalCubeType =
+  | {
+      id: string;
+      type: "pouch";
+    }
+  | {
+      id: string;
+      type: "card";
+      position: { cardId: AnimalCardId; index: number };
+    }
+  | {
+      id: string;
+      type: "playerBoard";
+      position: { coords: string };
+    };
+
 export interface PrivateGameState {
   tokensById: Record<string, TokenType>;
   animalCardsById: Record<string, AnimalCardType>;
+  animalCubesById: Record<string, AnimalCubeType>;
   boardType: "A" | "B";
   playerIdList: string[];
   currentPlayerId: string | null;
