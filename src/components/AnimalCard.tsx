@@ -1,9 +1,10 @@
 import { animalCardImages } from "src/constants/animalCardImages";
-import { AnimalCardId } from "src/sharedTypes";
+import { DerivedPublicGameState } from "src/sharedTypes";
 
 interface AnimalCardProps {
-  animalCardId: AnimalCardId;
+  card: DerivedPublicGameState["players"][number]["animalCards"][number];
 }
-export function AnimalCard({ animalCardId }: AnimalCardProps) {
-  return <img src={animalCardImages[animalCardId]} alt={animalCardId} />;
+export function AnimalCard({ card }: AnimalCardProps) {
+  if (!card) return null;
+  return <img src={animalCardImages[card.id]} alt={card.id} />;
 }

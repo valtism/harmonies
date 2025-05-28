@@ -8,9 +8,9 @@ interface AnimalCardSpreadProps {
 export function AnimalCardSpread({ spread }: AnimalCardSpreadProps) {
   return (
     <div className="flex h-60 gap-2">
-      {spread.map((animal, index) => {
-        if (!animal) return null;
-        return <AnimalCard key={index} animalCardId={animal.id} />;
+      {spread.map((card, index) => {
+        if (!card) return null;
+        return <AnimalCard key={index} card={card} />;
       })}
     </div>
   );

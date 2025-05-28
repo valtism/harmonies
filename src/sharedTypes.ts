@@ -53,11 +53,19 @@ export type AnimalCardType =
     })
   | (BaseAnimalCard & {
       type: "playerBoard";
-      position: { index: number };
+      position: { playerId: string; index: number };
     })
   | (BaseAnimalCard & {
       type: "playerCompleted";
+      position: { playerId: string };
     });
+
+type DerivedAnimalCardType = Omit<AnimalCardType, "scores"> & {
+  scores: {
+    points: number;
+    cubeId: string | null;
+  }[];
+};
 
 export type AnimalCubeType =
   | {
@@ -76,9 +84,9 @@ export type AnimalCubeType =
     };
 
 export interface PrivateGameState {
-  tokensById: Record<string, TokenType>;
-  animalCardsById: Record<string, AnimalCardType>;
-  animalCubesById: Record<string, AnimalCubeType>;
+  tokens: TokenType[];
+  animalCards: AnimalCardType[];
+  animalCubes: AnimalCubeType[];
   boardType: "A" | "B";
   playerIdList: string[];
   currentPlayerId: string | null;
@@ -89,6 +97,14 @@ export type ImmutablePrivateGameState = DeepImmutable<PrivateGameState>;
 interface PlayerState {
   id: string;
   name: string;
+  takenTokens: [TokenType | null, TokenType | null, TokenType | null];
+  animalCards: [
+    DerivedAnimalCardType | null,
+    DerivedAnimalCardType | null,
+    DerivedAnimalCardType | null,
+    DerivedAnimalCardType | null,
+  ];
+  completedAnimalCards: AnimalCardType[];
   board: Record<
     string,
     {
@@ -96,7 +112,6 @@ interface PlayerState {
       cube: "animal" | "spirit" | null;
     }
   >;
-  takenTokens: [TokenType | null, TokenType | null, TokenType | null];
 }
 
 export interface DerivedPublicGameState {
@@ -186,6 +201,11 @@ const placeTokenSchema = z.object({
   }),
 });
 
+const takeAnimalCard = z.object({
+  type: z.literal("takeAnimalCard"),
+  payload: z.number(),
+});
+
 const endTurnSchema = z.object({
   type: z.literal("endTurn"),
 });
@@ -198,6 +218,7 @@ export const actionSchema = z.union([
   startGameActionSchema,
   takeTokensSchema,
   placeTokenSchema,
+  takeAnimalCard,
   endTurnSchema,
   undoSchema,
 ]);

@@ -1,6 +1,6 @@
 import "@total-typescript/ts-reset";
 import type * as Party from "partykit/server";
-import { animalCards } from "../src/constants/animalCards";
+import { allAnimalCards } from "../src/constants/animalCards";
 import { grids } from "../src/constants/grids";
 import { allTokens } from "../src/constants/tokens";
 import {
@@ -124,6 +124,7 @@ export default class Server implements Party.Server {
     switch (action.type) {
       case "startGame":
       case "endTurn":
+      case "takeAnimalCard":
       case "undo":
         return false;
       case "takeTokens":
@@ -150,6 +151,8 @@ export default class Server implements Party.Server {
         return this.canTakeTokens(playerId);
       case "placeToken":
         return this.canPlaceToken();
+      case "takeAnimalCard":
+        return this.canTakeAnimalCard(playerId);
       case "endTurn":
         return this.canEndTurn(playerId);
       case "undo":
@@ -173,10 +176,13 @@ export default class Server implements Party.Server {
           action.payload.tokenId,
           action.payload.coords,
         );
+      case "takeAnimalCard":
+        return this.takeAnimalCard(playerId, action.payload);
       case "endTurn":
         return this.endTurn(playerId);
       case "startGame":
       case "undo":
+        // TODO: split these actions up because they are "meta"
         break;
       default:
         action satisfies never;
@@ -197,9 +203,7 @@ export default class Server implements Party.Server {
   startGame(): void {
     const playerIdList = shuffle(Object.keys(this.playersById));
 
-    const tokensById = shuffle([...allTokens]).reduce<
-      PrivateGameState["tokensById"]
-    >((tokensById, color, index) => {
+    const tokens = shuffle([...allTokens]).map((color, index) => {
       if (index < 15) {
         const zone = Math.floor(index / 3);
         const place = index % 3;
@@ -209,49 +213,42 @@ export default class Server implements Party.Server {
           type: "centralBoard",
           position: { zone, place },
         };
-        tokensById[token.id] = token;
+        return token;
       } else {
         const token: TokenType = {
           id: `token-${crypto.randomUUID()}`,
           color,
           type: "pouch",
         };
-        tokensById[token.id] = token;
+        return token;
       }
-      return tokensById;
-    }, {});
+    });
 
-    const animalCardsById = shuffle(Object.entries(animalCards)).reduce<
-      PrivateGameState["animalCardsById"]
-    >((animalCardsById, [id, animalCard], index) => {
+    const animalCards: PrivateGameState["animalCards"] = shuffle(
+      Object.values(allAnimalCards),
+    ).map((animalCard, index) => {
       if (index < 5) {
         const card: AnimalCardType = {
           ...animalCard,
           type: "spread",
           position: { index: index },
         };
-        animalCardsById[id] = card;
+        return card;
       } else {
         const card: AnimalCardType = {
           ...animalCard,
           type: "deck",
         };
-        animalCardsById[id] = card;
+        return card;
       }
-      return animalCardsById;
-    }, {});
+    });
 
-    const animalCubesById: PrivateGameState["animalCubesById"] = Array.from({
+    const animalCubes: PrivateGameState["animalCubes"] = Array.from({
       length: 66,
-    })
-      .map(() => ({
-        id: `animal-cube-${crypto.randomUUID()}`,
-        type: "pouch",
-      }))
-      .reduce((cubesById, cube) => {
-        cubesById[cube.id] = cube;
-        return cubesById;
-      }, {});
+    }).map(() => ({
+      id: `animal-cube-${crypto.randomUUID()}`,
+      type: "pouch",
+    }));
 
     const currentPlayerId = playerIdList[0];
     if (!currentPlayerId) throw new Error("No players found");
@@ -260,9 +257,9 @@ export default class Server implements Party.Server {
       boardType: "A",
       playerIdList: playerIdList,
       currentPlayerId: currentPlayerId,
-      tokensById: tokensById,
-      animalCardsById: animalCardsById,
-      animalCubesById: animalCubesById,
+      tokens: tokens,
+      animalCards: animalCards,
+      animalCubes: animalCubes,
     };
   }
 
@@ -281,26 +278,26 @@ export default class Server implements Party.Server {
   }
 
   takeTokens(playerId: string, zone: number): ImmutablePrivateGameState {
-    const tokensById: PrivateGameState["tokensById"] = {};
     let place = 0;
-    for (const id in this.gameState.tokensById) {
-      const token = this.gameState.tokensById[id];
-      if (token.type === "centralBoard" && token.position.zone === zone) {
-        const newToken: TokenType = {
-          id: token.id,
-          color: token.color,
-          type: "taken",
-          position: { player: playerId, place: place },
-        };
-        tokensById[id] = newToken;
-        place++;
-      } else {
-        tokensById[id] = token;
-      }
-    }
+    const tokens: PrivateGameState["tokens"] = this.gameState.tokens.map(
+      (token) => {
+        if (token.type === "centralBoard" && token.position.zone === zone) {
+          const newToken: TokenType = {
+            id: token.id,
+            color: token.color,
+            type: "taken",
+            position: { player: playerId, place: place },
+          };
+          place++;
+          return newToken;
+        } else {
+          return token;
+        }
+      },
+    );
     return {
       ...this.gameState,
-      tokensById,
+      tokens,
     };
   }
 
@@ -313,7 +310,9 @@ export default class Server implements Party.Server {
     tokenId: string,
     coords: string,
   ): ImmutablePrivateGameState {
-    const placingToken = this.gameState.tokensById[tokenId];
+    const placingToken = this.gameState.tokens.find(
+      (token) => token.id === tokenId,
+    );
     if (!placingToken) throw new Error("No token found");
     if (
       placingToken.type !== "taken" ||
@@ -322,9 +321,9 @@ export default class Server implements Party.Server {
       throw new Error("Invalid token");
     }
 
+    // TODO: This should be in canPlaceToken
     const stack: TokenType[] = [];
-    for (const key in this.gameState.tokensById) {
-      const token = this.gameState.tokensById[key];
+    this.gameState.tokens.forEach((token) => {
       if (
         token.type === "playerBoard" &&
         token.position.player === playerId &&
@@ -332,35 +331,80 @@ export default class Server implements Party.Server {
       ) {
         stack[token.position.place.stackPostion] = token;
       }
-    }
+    });
 
     const canPlace = tokenPlacable(placingToken, stack);
     if (!canPlace) throw new Error("Cannot place token");
 
-    const tokensById: PrivateGameState["tokensById"] = {};
-    for (const id in this.gameState.tokensById) {
-      if (id !== tokenId) {
-        const token = this.gameState.tokensById[id];
-        tokensById[id] = token;
-      } else {
-        const newToken: TokenType = {
-          ...placingToken,
-          type: "playerBoard",
-          position: {
-            player: playerId,
-            place: {
-              coords: coords,
-              stackPostion: stack.length,
+    const tokens: PrivateGameState["tokens"] = this.gameState.tokens.map(
+      (token) => {
+        if (token.id === tokenId) {
+          const newToken: TokenType = {
+            ...placingToken,
+            type: "playerBoard",
+            position: {
+              player: playerId,
+              place: {
+                coords: coords,
+                stackPostion: stack.length,
+              },
             },
-          },
-        };
-        tokensById[id] = newToken;
-      }
-    }
+          };
+          return newToken;
+        } else {
+          return token;
+        }
+      },
+    );
 
     return {
       ...this.gameState,
-      tokensById,
+      tokens,
+    };
+  }
+
+  canTakeAnimalCard(playerId: string): CanPerformAction {
+    return { ok: true };
+  }
+
+  takeAnimalCard(playerId: string, payload: number): ImmutablePrivateGameState {
+    const takenIndexes = this.gameState.animalCards.reduce(
+      (takenIndexes, card) => {
+        if (
+          card.type === "playerBoard" &&
+          card.position.playerId === playerId
+        ) {
+          takenIndexes.push(card.position.index);
+        }
+        return takenIndexes;
+      },
+      [] as number[],
+    );
+    let playerBoardFreeIndex = 0;
+    for (let i = 0; i <= 3; i++) {
+      if (!takenIndexes.includes(i)) {
+        playerBoardFreeIndex = i;
+        break;
+      }
+    }
+
+    const animalCards: PrivateGameState["animalCards"] =
+      this.gameState.animalCards.map((card) => {
+        if (card.type === "spread" && card.position.index === payload) {
+          const newCard: AnimalCardType = {
+            ...card,
+            type: "playerBoard",
+            position: { playerId: playerId, index: playerBoardFreeIndex },
+          };
+          return newCard;
+        } else {
+          return card;
+        }
+      });
+
+    return {
+      ...this.gameState,
+      animalCards,
     };
   }
 
@@ -394,39 +438,34 @@ export default class Server implements Party.Server {
         (index + 1) % this.gameState.playerIdList.length
       ];
 
-    // Replenish central boardType
-    let centralBoardZones = [0, 1, 2, 3, 4];
-    for (const key in this.gameState.tokensById) {
-      const token = this.gameState.tokensById[key];
-      if (token.type === "centralBoard") {
-        centralBoardZones = centralBoardZones.filter(
-          (zone) => zone !== token.position.zone,
-        );
-      }
-    }
-    if (centralBoardZones.length !== 1) {
+    const zoneToReplenish = [0, 1, 2, 3, 4].filter((zone) =>
+      this.gameState.tokens.some((token) => {
+        const zoneHasTokens =
+          token.type === "centralBoard" && token.position.zone === zone;
+        return !zoneHasTokens;
+      }),
+    );
+
+    if (zoneToReplenish.length !== 1) {
       throw new Error("Invalid central board state");
     }
-    const zoneToReplenish = centralBoardZones[0];
-    const tokensById = {};
-    const tokensToAllocate = 3;
-    let place = 0;
-    for (const key in this.gameState.tokensById) {
-      const token = this.gameState.tokensById[key];
-      if (place < tokensToAllocate && token.type === "pouch") {
+
+    let tokensToAllocate = 3;
+    const tokens = this.gameState.tokens.map((token) => {
+      if (tokensToAllocate > 0 && token.type === "pouch") {
         const newToken: TokenType = {
           ...token,
           type: "centralBoard",
-          position: { zone: zoneToReplenish, place: place },
+          position: { zone: zoneToReplenish[0], place: 3 - tokensToAllocate },
         };
-        tokensById[key] = newToken;
-        place++;
+        tokensToAllocate--;
+        return newToken;
       } else {
-        tokensById[key] = token;
+        return token;
       }
-    }
+    });
 
-    return { ...this.gameState, tokensById, currentPlayerId: nextPlayerId };
+    return { ...this.gameState, tokens, currentPlayerId: nextPlayerId };
   }
 
   canUndo(playerId: string): CanPerformAction {
@@ -446,7 +485,8 @@ export default class Server implements Party.Server {
   }
 
   deriveGameState() {
-    const grid = grids[this.gameState.boardType];
+    const grid: DerivedPublicGameState["grid"] =
+      grids[this.gameState.boardType];
 
     const centralBoard: DerivedPublicGameState["centralBoard"] = [
       [null, null, null],
@@ -462,6 +502,9 @@ export default class Server implements Party.Server {
       players[playerId] = {
         id: playerId,
         name: this.playersById[playerId].name,
+        takenTokens: [null, null, null],
+        animalCards: [null, null, null, null],
+        completedAnimalCards: [],
         board: grid.reduce<DerivedPublicGameState["players"][string]["board"]>(
           (board, [q, r]) => {
             const key = `(${q},${r})`;
@@ -473,14 +516,12 @@ export default class Server implements Party.Server {
           },
           {},
         ),
-        takenTokens: [null, null, null],
       };
       return players;
     }, {});
 
     // Iterate over the tokens and distribute them
-    for (const key in this.gameState.tokensById) {
-      const token = this.gameState.tokensById[key];
+    this.gameState.tokens.forEach((token) => {
       switch (token.type) {
         case "pouch":
           break;
@@ -499,7 +540,7 @@ export default class Server implements Party.Server {
         default:
           token satisfies never;
       }
-    }
+    });
 
     const currentPlayerId = this.gameState.currentPlayerId;
     if (!currentPlayerId) throw new Error("No current player");
@@ -511,8 +552,7 @@ export default class Server implements Party.Server {
       null,
       null,
     ];
-    for (const key in this.gameState.animalCardsById) {
-      const animalCard = this.gameState.animalCardsById[key];
+    this.gameState.animalCards.forEach((animalCard) => {
       switch (animalCard.type) {
         case "deck":
           // TODO
@@ -521,15 +561,25 @@ export default class Server implements Party.Server {
           animalCardSpread[animalCard.position.index] = animalCard;
           break;
         case "playerBoard":
-          // TODO
+          players[animalCard.position.playerId].animalCards[
+            animalCard.position.index
+          ] = {
+            ...animalCard,
+            scores: animalCard.scores.map((score) => ({
+              points: score,
+              cubeId: null,
+            })),
+          };
           break;
         case "playerCompleted":
-          // TODO
+          players[animalCard.position.playerId].completedAnimalCards.push(
+            animalCard,
+          );
           break;
         default:
           animalCard satisfies never;
       }
-    }
+    });
 
     this.derivedGameState = {
       grid: grid,
