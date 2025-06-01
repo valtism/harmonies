@@ -30,7 +30,6 @@ import rayCard from "src/assets/animalCards/ray.webp";
 import shrewCard from "src/assets/animalCards/shrew.webp";
 import squirrelCard from "src/assets/animalCards/squirrel.webp";
 import wolfCard from "src/assets/animalCards/wolf.webp";
-import { AnimalCardId } from "src/sharedTypes";
 
 export const animalCardImages = {
   alligator: alligatorCard,

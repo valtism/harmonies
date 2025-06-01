@@ -1,7 +1,7 @@
 import { CSSProperties } from "react";
 import CentralBoardImg from "src/assets/centralBoard.webp";
 import { Token } from "src/components/Token";
-import { DerivedPublicGameState } from "src/shared";
+import { DerivedPublicGameState } from "src/sharedTypes";
 
 const centralBoardStyles: CSSProperties[] = [
   { top: "11%", left: "20%" },

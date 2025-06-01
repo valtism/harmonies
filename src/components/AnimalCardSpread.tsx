@@ -10,7 +10,18 @@ export function AnimalCardSpread({ spread }: AnimalCardSpreadProps) {
     <div className="flex h-60 gap-2">
       {spread.map((card, index) => {
         if (!card) return null;
-        return <AnimalCard key={index} card={card} />;
+        return (
+          <AnimalCard
+            key={index}
+            card={{
+              ...card,
+              scores: card.scores.map((score) => ({
+                points: score,
+                cubeId: null,
+              })),
+            }}
+          />
+        );
       })}
     </div>
   );
