@@ -7,7 +7,7 @@
     "dev": "vite",
     "party": "partykit dev --live",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "tsc -b && eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
