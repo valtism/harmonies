@@ -11,16 +11,17 @@ export function AnimalCardSpread({ spread }: AnimalCardSpreadProps) {
       {spread.map((card, index) => {
         if (!card) return null;
         return (
-          <AnimalCard
-            key={index}
-            card={{
-              ...card,
-              scores: card.scores.map((score) => ({
-                points: score,
-                cubeId: null,
-              })),
-            }}
-          />
+          <button key={index}>
+            <AnimalCard
+              card={{
+                ...card,
+                scores: card.scores.map((score) => ({
+                  points: score,
+                  cubeId: null,
+                })),
+              }}
+            />
+          </button>
         );
       })}
     </div>

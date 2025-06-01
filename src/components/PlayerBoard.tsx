@@ -173,12 +173,13 @@ export function PlayerBoard({
 
   return (
     <div>
-      <div className="flex gap-2 my-2">
-        {player.animalCards.map((card) =>
+      <div className="my-2 flex gap-2">
+        {player.animalCards.map((card, index) =>
           card ? (
             <AnimalCard key={card.id} card={card} />
           ) : (
             <div
+              key={index}
               style={{ aspectRatio: "140/240" }}
               className="w-full rounded-lg border border-dotted"
             />
