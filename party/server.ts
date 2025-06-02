@@ -6,6 +6,7 @@ import { allTokens } from "../src/constants/tokens";
 import {
   ActionType,
   AnimalCardType,
+  AnimalCubeType,
   Broadcast,
   CanPerformAction,
   DerivedPublicGameState,
@@ -367,7 +368,10 @@ export default class Server implements Party.Server {
     return { ok: true };
   }
 
-  takeAnimalCard(playerId: string, payload: number): ImmutablePrivateGameState {
+  takeAnimalCard(
+    playerId: string,
+    payload: { index: number },
+  ): ImmutablePrivateGameState {
     const takenIndexes = this.gameState.animalCards.reduce(
       (takenIndexes, card) => {
         if (
@@ -390,7 +394,7 @@ export default class Server implements Party.Server {
 
     const animalCards: PrivateGameState["animalCards"] =
       this.gameState.animalCards.map((card) => {
-        if (card.type === "spread" && card.position.index === payload) {
+        if (card.type === "spread" && card.position.index === payload.index) {
           const newCard: AnimalCardType = {
             ...card,
             type: "playerBoard",
@@ -402,9 +406,37 @@ export default class Server implements Party.Server {
         }
       });
 
+    const selectedCard = animalCards.find(
+      (card) =>
+        card.type === "playerBoard" &&
+        card.position.playerId === playerId &&
+        card.position.index === playerBoardFreeIndex,
+    );
+
+    if (!selectedCard) {
+      throw new Error("No card selected");
+    }
+
+    let scoreIndex = selectedCard.scores.length;
+    const animalCubes = this.gameState.animalCubes.map((cube) => {
+      if (scoreIndex < 0) return cube;
+
+      const newCube: AnimalCubeType = {
+        ...cube,
+        type: "card",
+        position: {
+          cardId: selectedCard.id,
+          index: scoreIndex,
+        },
+      };
+      scoreIndex--;
+      return newCube;
+    });
+
     return {
       ...this.gameState,
       animalCards,
+      animalCubes,
     };
   }
 
@@ -567,7 +599,13 @@ export default class Server implements Party.Server {
             ...animalCard,
             scores: animalCard.scores.map((score) => ({
               points: score,
-              cubeId: null,
+              cubeId:
+                this.gameState.animalCubes.find(
+                  (cube) =>
+                    cube.type === "card" &&
+                    cube.position.cardId === animalCard.id &&
+                    cube.position.index === animalCard.position.index,
+                )?.id ?? null,
             })),
           };
           break;

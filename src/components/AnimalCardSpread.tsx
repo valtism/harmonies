@@ -3,15 +3,16 @@ import { DerivedPublicGameState } from "src/sharedTypes";
 
 interface AnimalCardSpreadProps {
   spread: DerivedPublicGameState["animalCardSpread"];
+  onClick: (index: number) => void;
 }
 
-export function AnimalCardSpread({ spread }: AnimalCardSpreadProps) {
+export function AnimalCardSpread({ spread, onClick }: AnimalCardSpreadProps) {
   return (
-    <div className="flex h-60 gap-2">
+    <div className="flex w-80 gap-2">
       {spread.map((card, index) => {
         if (!card) return null;
         return (
-          <button key={index}>
+          <button key={index} onClick={() => onClick(index)} className="flex-1">
             <AnimalCard
               card={{
                 ...card,

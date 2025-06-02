@@ -174,17 +174,15 @@ export function PlayerBoard({
   return (
     <div>
       <div className="my-2 flex gap-2">
-        {player.animalCards.map((card, index) =>
-          card ? (
-            <AnimalCard key={card.id} card={card} />
-          ) : (
-            <div
-              key={index}
-              style={{ aspectRatio: "140/240" }}
-              className="w-full rounded-lg border border-dotted"
-            />
-          ),
-        )}
+        {player.animalCards.map((card, index) => (
+          <div key={card?.id || index} className="flex-1" style={{ aspectRatio: "140/240" }}>
+            {card ? (
+              <AnimalCard card={card} />
+            ) : (
+              <div className="h-full rounded-lg border border-dotted" />
+            )}
+          </div>
+        ))}
       </div>
       <div ref={ref} className="relative inline-block">
         <img src={BoardSideA} alt="player board" />

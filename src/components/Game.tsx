@@ -46,7 +46,12 @@ export function Game({ gameState, sendAction, playerId }: GameProps) {
         }}
       />
 
-      <AnimalCardSpread spread={gameState.animalCardSpread} />
+      <AnimalCardSpread
+        spread={gameState.animalCardSpread}
+        onClick={(index) => {
+          sendAction({ type: "takeAnimalCard", payload: { index: index } });
+        }}
+      />
 
       {Object.values(gameState.players).map((player) => (
         <div key={player.id} style={{ width: 400 }}>

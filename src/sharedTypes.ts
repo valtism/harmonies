@@ -203,7 +203,9 @@ const placeTokenSchema = z.object({
 
 const takeAnimalCard = z.object({
   type: z.literal("takeAnimalCard"),
-  payload: z.number(),
+  payload: z.object({
+    index: z.number(),
+  }),
 });
 
 const endTurnSchema = z.object({
