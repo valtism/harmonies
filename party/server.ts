@@ -71,7 +71,9 @@ export default class Server implements Party.Server {
     this.performAction(playerId, action);
 
     // let's log the message
-    console.log(`connection ${sender.id} sent message: ${message}`);
+    console.log(
+      `╭──────────╮\n│\x1b[1mConnection\x1b[0m│${sender.id} sent message:\n╰──────────╯\n\x1b[33m${JSON.stringify(JSON.parse(message), null, 2)}\x1b[0m`,
+    );
     // as well as broadcast it to all the other connections in the room...
     // this.room.broadcast(
     //   `${sender.id}: ${message}`,
@@ -597,14 +599,14 @@ export default class Server implements Party.Server {
             animalCard.position.index
           ] = {
             ...animalCard,
-            scores: animalCard.scores.map((score) => ({
+            scores: animalCard.scores.map((score, index) => ({
               points: score,
               cubeId:
                 this.gameState.animalCubes.find(
                   (cube) =>
                     cube.type === "card" &&
                     cube.position.cardId === animalCard.id &&
-                    cube.position.index === animalCard.position.index,
+                    cube.position.index === index,
                 )?.id ?? null,
             })),
           };
