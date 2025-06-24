@@ -393,7 +393,7 @@ export default class Server implements Party.Server {
       if (history.action.type === "takeAnimalCard") {
         return {
           ok: false,
-          message: "Already taken an anGimal card this turn",
+          message: "Already taken an animal card this turn",
         };
       }
     }
