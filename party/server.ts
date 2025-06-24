@@ -127,11 +127,11 @@ export default class Server implements Party.Server {
     switch (action.type) {
       case "startGame":
       case "endTurn":
-      case "takeAnimalCard":
       case "undo":
         return false;
       case "takeTokens":
       case "placeToken":
+      case "takeAnimalCard":
         return true;
       default:
         action satisfies never;
