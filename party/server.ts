@@ -367,6 +367,24 @@ export default class Server implements Party.Server {
   }
 
   canTakeAnimalCard(playerId: string): CanPerformAction {
+    const takenIndexes = this.gameState.animalCards.reduce(
+      (takenIndexes, card) => {
+        if (
+          card.type === "playerBoard" &&
+          card.position.playerId === playerId
+        ) {
+          takenIndexes.push(card.position.index);
+        }
+        return takenIndexes;
+      },
+      [] as number[],
+    );
+
+    // Check if all 4 slots (0, 1, 2, 3) are occupied
+    if (takenIndexes.length >= 4) {
+      return { ok: false, message: "All animal card slots are full" };
+    }
+
     return { ok: true };
   }
 
