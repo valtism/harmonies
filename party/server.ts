@@ -267,7 +267,6 @@ export default class Server implements Party.Server {
   }
 
   canTakeTokens(playerId: string): CanPerformAction {
-    return { ok: true };
     for (let i = this.history.length; i > 0; i--) {
       const history = this.history[i - 1];
       if (history.gameState.currentPlayerId !== playerId) {
@@ -392,7 +391,10 @@ export default class Server implements Party.Server {
         break;
       }
       if (history.action.type === "takeAnimalCard") {
-        return { ok: false, message: "Already taken an anGimal card this turn" };
+        return {
+          ok: false,
+          message: "Already taken an anGimal card this turn",
+        };
       }
     }
 
