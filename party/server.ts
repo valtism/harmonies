@@ -504,7 +504,7 @@ export default class Server implements Party.Server {
       ];
 
     const zoneToReplenish = [0, 1, 2, 3, 4].filter((zone) =>
-      this.gameState.tokens.some((token) => {
+      this.gameState.tokens.every((token) => {
         const zoneHasTokens =
           token.type === "centralBoard" && token.position.zone === zone;
         return !zoneHasTokens;
