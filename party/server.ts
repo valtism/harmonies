@@ -385,6 +385,17 @@ export default class Server implements Party.Server {
       return { ok: false, message: "All animal card slots are full" };
     }
 
+    // Check if player has already taken an animal card this turn
+    for (let i = this.history.length; i > 0; i--) {
+      const history = this.history[i - 1];
+      if (history.gameState.currentPlayerId !== playerId) {
+        break;
+      }
+      if (history.action.type === "takeAnimalCard") {
+        return { ok: false, message: "Already taken an anGimal card this turn" };
+      }
+    }
+
     return { ok: true };
   }
 
