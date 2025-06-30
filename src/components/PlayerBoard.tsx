@@ -1,5 +1,11 @@
 import clsx from "clsx";
-import { defineHex, fromCoordinates, Grid, Orientation } from "honeycomb-grid";
+import {
+  defineHex,
+  fromCoordinates,
+  Grid,
+  Hex,
+  Orientation,
+} from "honeycomb-grid";
 import { startTransition, useEffect, useRef, useState } from "react";
 import BoardSideA from "src/assets/boardSideA.webp";
 import { AnimalCard } from "src/components/AnimalCard";
@@ -13,28 +19,6 @@ import {
 } from "src/sharedTypes";
 
 const debug = true;
-
-const butterfly = {
-  name: "Butterfly",
-  shape: [
-    {
-      coords: { q: 0, r: 0 },
-      tokens: ["yellow"],
-    },
-    {
-      coords: { q: 1, r: 0 },
-      tokens: ["blue"],
-    },
-    {
-      coords: { q: 0, r: 1 },
-      tokens: ["blue"],
-    },
-    {
-      coords: { q: 1, r: 1 },
-      tokens: ["yellow"],
-    },
-  ],
-};
 
 type Coords = { q: number; r: number };
 
@@ -67,6 +51,10 @@ export function PlayerBoard({
 }: PlayerBoardProps) {
   const player = gameState.players[playerId];
   if (!player) throw new Error("Player not found");
+
+  const [selectedAnimalCardId, setSelectedAnimalCardId] = useState<
+    string | null
+  >(null);
 
   const [placingToken, setPlacingToken] = useState<TokenType | null>(null);
   // Unset placingToken only once server has placed the token on the board
@@ -112,7 +100,7 @@ export function PlayerBoard({
     orientation: Orientation.FLAT,
     origin: "topLeft",
   });
-  gameState.players[playerId]!.board["(1,1)"] = {
+  player.board["(1,1)"] = {
     cube: null,
     tokens: [
       {
@@ -126,7 +114,7 @@ export function PlayerBoard({
       },
     ],
   };
-  gameState.players[playerId]!.board["(2,0)"] = {
+  player.board["(2,0)"] = {
     cube: null,
     tokens: [
       {
@@ -140,7 +128,7 @@ export function PlayerBoard({
       },
     ],
   };
-  gameState.players[playerId]!.board["(2,1)"] = {
+  player.board["(2,1)"] = {
     cube: null,
     tokens: [
       {
@@ -154,7 +142,7 @@ export function PlayerBoard({
       },
     ],
   };
-  gameState.players[playerId]!.board["(3,0)"] = {
+  player.board["(3,0)"] = {
     cube: null,
     tokens: [
       {
@@ -173,11 +161,35 @@ export function PlayerBoard({
 
   return (
     <div>
+      {debug && (
+        <div className="flex">
+          <div>Animal Card Id:</div>
+          <div>{selectedAnimalCardId}</div>
+        </div>
+      )}
       <div className="my-2 flex gap-2">
         {player.animalCards.map((card, index) => (
-          <div key={card?.id || index} className="flex-1" style={{ aspectRatio: "140/240" }}>
+          <div
+            key={card?.id || index}
+            className="flex-1"
+            style={{ aspectRatio: "140/240" }}
+          >
             {card ? (
-              <AnimalCard card={card} />
+              <button
+                onClick={() => {
+                  if (selectedAnimalCardId === card.id) {
+                    setSelectedAnimalCardId(null);
+                  } else {
+                    setSelectedAnimalCardId(card.id);
+                  }
+                }}
+                className={clsx(
+                  selectedAnimalCardId === card.id &&
+                    "rounded ring-3 ring-green-500",
+                )}
+              >
+                <AnimalCard card={card} />
+              </button>
             ) : (
               <div className="h-full rounded-lg border border-dotted" />
             )}
@@ -194,35 +206,14 @@ export function PlayerBoard({
             const tokens = tile?.tokens || [];
             const isTokenPlacable = tokenPlacable(placingToken, tokens);
 
-            const positions = butterfly.shape.map((tile) => tile.coords);
-            const rotations = [0, 1, 2, 3, 4, 5].map((rotation) =>
-              positions.map((position) => rotate(position, rotation)),
-            );
-            const relativePositions = rotations.map((roatation) =>
-              roatation.map((coords) =>
-                translate(coords, { q: hex.q, r: hex.r }),
+            const hasMatch = getIsMatch(
+              player.animalCards.find(
+                (card) => card?.id === selectedAnimalCardId,
               ),
+              grid,
+              hex,
+              player.board,
             );
-            const traversers = relativePositions.map((positions) =>
-              fromCoordinates(...positions),
-            );
-
-            const matches = traversers.map((traverser) => {
-              const trav = grid.traverse(traverser, { bail: false }).toArray();
-              // TODO: Make me dynamic
-              if (trav.length !== 4) return false;
-
-              return trav.reduce((isMatch, hex, index) => {
-                const hexTokens =
-                  gameState.players[playerId]!.board[hex.toString()]!.tokens;
-                const shapeTokens = butterfly.shape[index]!.tokens;
-                const stackMatch =
-                  hexTokens.length === shapeTokens.length &&
-                  hexTokens.every((token, i) => token.color === shapeTokens[i]);
-                return isMatch && stackMatch;
-              }, true);
-            });
-            const hasMatch = matches.some((match) => match);
 
             return (
               <div
@@ -309,4 +300,47 @@ export function PlayerBoard({
       </div>
     </div>
   );
+}
+
+function getIsMatch(
+  animalCard:
+    | DerivedPublicGameState["players"][number]["animalCards"][number]
+    | undefined
+    | null,
+  grid: Grid<Hex>,
+  hex: Coords,
+  playerBoard: DerivedPublicGameState["players"][number]["board"],
+) {
+  if (!animalCard) return false;
+
+  const positions = animalCard.shape.map((tile) => tile.coordinates);
+  const rotations = [0, 1, 2, 3, 4, 5].map((rotation) =>
+    positions.map((position) => rotate(position, rotation)),
+  );
+  const relativePositions = rotations.map((roatation) =>
+    roatation.map((coords) => translate(coords, { q: hex.q, r: hex.r })),
+  );
+  const traversers = relativePositions.map((positions) =>
+    fromCoordinates(...positions),
+  );
+
+  const matches = traversers.map((traverser) => {
+    const trav = grid.traverse(traverser, { bail: false }).toArray();
+    // TODO: Make me dynamic
+    // if (trav.length !== 4) return false;
+
+    return trav.reduce((isMatch, hex, index) => {
+      const place = playerBoard[hex.toString()];
+      if (!place) return false;
+      const placeTokens = place.tokens;
+      const topPlaceToken = placeTokens.at(-1);
+      if (!topPlaceToken) return false;
+      const topToken = animalCard.shape[index]!.topToken;
+      const stackMatch =
+        placeTokens.length - 1 === topToken.index &&
+        topPlaceToken.color === topToken.color;
+      return isMatch && stackMatch;
+    }, true);
+  });
+  return matches.some((match) => match);
 }

@@ -83,6 +83,11 @@ export type AnimalCubeType =
       position: { coords: string };
     };
 
+export interface Place {
+  tokens: TokenType[];
+  cube: "animal" | "spirit" | null;
+}
+
 export interface PrivateGameState {
   tokens: TokenType[];
   animalCards: AnimalCardType[];
@@ -105,13 +110,7 @@ interface PlayerState {
     DerivedAnimalCardType | null,
   ];
   completedAnimalCards: AnimalCardType[];
-  board: Record<
-    string,
-    {
-      tokens: TokenType[];
-      cube: "animal" | "spirit" | null;
-    }
-  >;
+  board: Record<string, Place>;
 }
 
 export interface DerivedPublicGameState {
